@@ -123,7 +123,6 @@ class Controller:
                                    self.view.PLAYER_RADIUS)
 
         offset_coord = self.model.player.get_offset_px()
-        #print(offset_coord)
         self.view.player_sprite.set_coord(offset_coord[0], offset_coord[1])
         self.view.draw_maze_screen()
 

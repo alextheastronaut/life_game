@@ -137,7 +137,7 @@ class Player:
 class Model:
     def __init__(self):
         self.slot_machine = SlotMachine()
-        self.maze = Maze(3, 5)
+        self.maze = Maze(15, 20)
         self.player = None
 
     def init_player(self, x, y, offset_x, offset_y):
@@ -154,8 +154,6 @@ class Model:
             elif direction is Direction.RIGHT:
                 self.player.px += 1
 
-            print('hi')
-
     def __can_move(self, direction, block_size, player_radius):
         # Calculate which cells the player occupies
         square = block_size * 4
@@ -167,7 +165,6 @@ class Model:
         y_p1 = p1[0] // square
         x_p2 = p2[1] // square
         y_p2 = p2[0] // square
-
 
         # 2d array of cells
         maze = self.maze.Maze
