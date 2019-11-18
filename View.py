@@ -27,6 +27,28 @@ class Sound:
         self.is_playing = False
 
 
+class PlayerSprite(pygame.sprite.Sprite):
+    def __init__(self, color, maze_color, x, y, radius):
+        # Call the parent class (Sprite) constructor
+        super().__init__()
+
+        # Create the rectangular image, fill and set background to transparent
+        self.image = self.image = pygame.Surface([radius * 2, radius * 2])
+        self.image.fill(maze_color)
+        self.image.set_colorkey(maze_color)
+
+        # Draw our player onto the transparent rectangle
+        pygame.draw.circle(self.image, color, (radius, radius), radius)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+    def set_coord(self, x, y):
+        self.rect.x = x
+        self.rect.y = y
+
+
 class View:
     BACKGROUND_IMAGE_NAME = 'background.png'
     GAME_TITLE = 'Slot Machine'
@@ -39,6 +61,9 @@ class View:
     BLOCK_SIZE = 10
     PATH_WIDTH = 3
     CELL_SIZE = BLOCK_SIZE * PATH_WIDTH + BLOCK_SIZE  # extra BLOCK_SIZE to include wall to east and south of cell
+
+    PLAYER_COLOR = (0, 0, 255)  # Blue
+    PLAYER_RADIUS = (BLOCK_SIZE * 3) // 2
 
     def __init__(self, maze):
         """ Constructs view, setting up values for coordinates and colors"""
@@ -67,6 +92,12 @@ class View:
         self.MAZE_HEIGHT_PX = self.CELL_SIZE * maze.height + self.BLOCK_SIZE
         self.MAZE_TOP_LEFT_CORNER = (self.SCREEN_WIDTH // 2 - self.MAZE_WIDTH_PX // 2,
                                      self.SCREEN_HEIGHT // 2 - self.MAZE_HEIGHT_PX // 2)
+        self.OFFSET_X = self.MAZE_TOP_LEFT_CORNER[0] + self.BLOCK_SIZE
+        self.OFFSET_Y = self.MAZE_TOP_LEFT_CORNER[1] + self.BLOCK_SIZE
+
+        self.maze_image = None
+        self.player_sprite = None
+        self.player_sprite_image = None
 
     def spin_results_to_icon_images(self, spin_results):
         icon_images = [0] * 3
@@ -81,6 +112,10 @@ class View:
         return [[Icon('female_symbol.jpg'), Icon('male_symbol.jpg')],
                 [Icon('black_hand.jpg'), Icon('white_hand.jpg')],
                 [Icon('food_stamp.jpg'), Icon('money.jpg')]]
+
+    def draw_maze_screen(self):
+        self.screen.blit(self.maze_image, (0, 0))
+        self.player_sprite_image.draw(self.screen)
 
     def draw_maze(self, maze):
         """ Draws a maze with a maze object"""
@@ -105,6 +140,9 @@ class View:
                         self.draw_block(x * (self.PATH_WIDTH + 1) + self.PATH_WIDTH,
                                         y * (self.PATH_WIDTH + 1) + p)
 
+        pygame.display.update()
+        self.maze_image = self.screen.copy()
+
     def draw_block(self, x, y):
         x_offset = self.MAZE_TOP_LEFT_CORNER[0] + self.BLOCK_SIZE
         y_offset = self.MAZE_TOP_LEFT_CORNER[1] + self.BLOCK_SIZE
@@ -116,3 +154,8 @@ class View:
         x_coord = self.MAZE_TOP_LEFT_CORNER[0]
         y_coord = self.MAZE_TOP_LEFT_CORNER[1]
         pygame.draw.rect(self.screen, self.WALL_COLOR, (x_coord, y_coord, self.MAZE_WIDTH_PX, self.MAZE_HEIGHT_PX))
+
+    def init_player(self, x, y):
+        self.player_sprite = PlayerSprite(self.PLAYER_COLOR, self.MAZE_COLOR, x, y, self.PLAYER_RADIUS)
+        self.player_sprite_image = pygame.sprite.RenderPlain(self.player_sprite)
+

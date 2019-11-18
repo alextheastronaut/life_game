@@ -2,11 +2,12 @@ import pygame
 import time
 import random
 from Model import Model
+from Model import Direction
 from View import View
 
 
 class Controller:
-    FRAME_RATE = 60
+    FRAME_RATE = 30
 
     def __init__(self):
         self.model = Model()
@@ -99,18 +100,45 @@ class Controller:
 
         return True
 
+    def init_maze_game(self):
+        self.view.draw_maze(self.model.maze)
+        self.model.init_player(0, 0, self.view.OFFSET_X, self.view.OFFSET_Y)
+        offset_coord = self.model.player.get_offset_px()
+        self.view.init_player(offset_coord[0], offset_coord[1])
+
+    def play_maze_game(self):
+        # Handle key input
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            self.model.move_player(Direction.UP, self.view.BLOCK_SIZE,
+                                   self.view.PLAYER_RADIUS)
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            self.model.move_player(Direction.DOWN, self.view.BLOCK_SIZE,
+                                   self.view.PLAYER_RADIUS)
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            self.model.move_player(Direction.LEFT, self.view.BLOCK_SIZE,
+                                   self.view.PLAYER_RADIUS)
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            self.model.move_player(Direction.RIGHT, self.view.BLOCK_SIZE,
+                                   self.view.PLAYER_RADIUS)
+
+        offset_coord = self.model.player.get_offset_px()
+        #print(offset_coord)
+        self.view.player_sprite.set_coord(offset_coord[0], offset_coord[1])
+        self.view.draw_maze_screen()
+
     def start_game(self):
         # self.init_slot_machine()
         # Continue looping while the player hasn't ended the game
         continue_playing = True
-
+        self.init_maze_game()
         while continue_playing:
             # continue_playing = self.play_slot_machine()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     continue_playing = False
 
-            self.view.draw_maze(self.model.maze)
+            self.play_maze_game()
 
             # Refresh the display
             pygame.display.flip()

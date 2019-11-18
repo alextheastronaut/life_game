@@ -117,7 +117,73 @@ class Cell:
         self.open_walls = 0  # bitmap representing whether the cell's wall is open or closed.
 
 
+class Player:
+    def __init__(self, px, py, offset_x, offset_y):
+        # Save the start position
+        # x and y pixel coordinates
+        self.start_px = self.px = px
+        self.start_py = self.py = py
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+
+    def reset(self):
+        self.px = self.start_px
+        self.py = self.start_py
+
+    def get_offset_px(self):
+        return self.px + self.offset_x, self.py + self.offset_y
+
+
 class Model:
     def __init__(self):
         self.slot_machine = SlotMachine()
-        self.maze = Maze(10, 15)
+        self.maze = Maze(3, 5)
+        self.player = None
+
+    def init_player(self, x, y, offset_x, offset_y):
+        self.player = Player(x, y, offset_x, offset_y)
+
+    def move_player(self, direction, block_size, player_radius):
+        if self.__can_move(direction, block_size, player_radius):
+            if direction is Direction.UP:
+                self.player.py -= 1
+            elif direction is Direction.DOWN:
+                self.player.py += 1
+            elif direction is Direction.LEFT:
+                self.player.px -= 1
+            elif direction is Direction.RIGHT:
+                self.player.px += 1
+
+            print('hi')
+
+    def __can_move(self, direction, block_size, player_radius):
+        # Calculate which cells the player occupies
+        square = block_size * 4
+        p1 = (self.player.px, self.player.py)  # Top left corner of player
+        p2 = (p1[0] + square - 1, p1[1] + square - 1)  # Bottom right corner of player
+
+        # Convert to maze index
+        x_p1 = p1[1] // square
+        y_p1 = p1[0] // square
+        x_p2 = p2[1] // square
+        y_p2 = p2[0] // square
+
+
+        # 2d array of cells
+        maze = self.maze.Maze
+
+        # if direction is Direction.UP:
+        # If the sprite is in the cell
+        if x_p1 == x_p2 and y_p1 == y_p2:
+            return maze[x_p1][y_p1].open_walls & direction.value
+        else:
+            dir_coord = self.maze.NEIGHBORS[direction]
+            # print(x_p1, y_p1)
+            # print(x_p2, y_p2)
+            # print(x_p1 + dir_coord[0], y_p1 + dir_coord[1])
+            # print(x_p1 + dir_coord[0] == x_p2, y_p1 + dir_coord[1] == y_p2)
+            if direction is Direction.DOWN or direction is Direction.RIGHT:
+                return x_p1 + dir_coord[0] == x_p2 and y_p1 + dir_coord[1] == y_p2
+            else:
+                return x_p2 + dir_coord[0] == x_p1 and y_p2 + dir_coord[1] == y_p1
+
