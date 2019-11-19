@@ -126,18 +126,30 @@ class Controller:
         self.view.player_sprite.set_coord(offset_coord[0], offset_coord[1])
         self.view.draw_maze_screen()
 
+    def init_shelf_game(self):
+        shelf_game = self.model.shelf_game
+        self.view.init_shelf_view(shelf_game.shelf_order, shelf_game.stock_order)
+
+    def play_shelf_game(self):
+        self.view.draw_shelf()
+
     def start_game(self):
+
         # self.init_slot_machine()
+        # self.init_maze_game()
+        self.init_shelf_game()
+
         # Continue looping while the player hasn't ended the game
         continue_playing = True
-        self.init_maze_game()
+
         while continue_playing:
-            # continue_playing = self.play_slot_machine()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     continue_playing = False
 
-            self.play_maze_game()
+            # continue_playing = self.play_slot_machine()
+            # self.play_maze_game()
+            self.play_shelf_game()
 
             # Refresh the display
             pygame.display.flip()

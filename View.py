@@ -3,6 +3,7 @@ import pygame
 
 class Icon(pygame.sprite.Sprite):
     def __init__(self, icon_image):
+        super().__init__()
         self.image = pygame.image.load("images/" + icon_image)
         self.image = pygame.transform.scale(self.image, (150, 150))
         self.image = self.image.convert_alpha()
@@ -11,7 +12,7 @@ class Icon(pygame.sprite.Sprite):
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self, image_file_name, pos):
-        pygame.sprite.Sprite.__init__(self)
+        super().__init__()
         # Load the png image with transparency
         self.image = pygame.image.load("images/" + image_file_name)
         self.image = self.image.convert_alpha()
@@ -19,6 +20,39 @@ class Sprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect = self.rect.move(pos)
         self.pos = pos
+
+
+class FoodSprite(pygame.sprite.Sprite):
+    def __init__(self, name, icon_image):
+        super().__init__()
+        self.name = name
+        self.image = pygame.image.load("images/" + icon_image)
+        self.image = pygame.transform.scale(self.image, (150, 150))
+        self.image = self.image.convert_alpha()
+        self.rect = self.image.get_rect()
+
+
+class BackgroundSprite(pygame.sprite.Sprite):
+    def __init__(self, filename, screen_width, screen_height):
+        super().__init__()
+        self.image = pygame.image.load("images/" + filename)
+        self.image = self.image.convert_alpha()
+
+        self.pos = self.image.get_size()
+        self.pos = (screen_width // 2 - self.pos[0] // 2, screen_height // 2 - self.pos[1] // 2)
+
+        self.rect = self.image.get_rect()
+        self.rect = self.rect.move(self.pos)
+
+
+class ShelfGame:
+    def __init__(self, shelf_order, stock_order, screen_width, screen_height):
+        self.food_sprites = []
+        for item_name in shelf_order:
+            filename = item_name + '.png'
+            self.food_sprites.append(FoodSprite(item_name, filename))
+
+        self.shelf_sprite = BackgroundSprite('shelf.png', screen_width, screen_height)
 
 
 class Sound:
@@ -99,6 +133,8 @@ class View:
         self.player_sprite = None
         self.player_sprite_image = None
 
+        self.shelf_view = None
+
     def spin_results_to_icon_images(self, spin_results):
         icon_images = [0] * 3
         for reel in range(3):
@@ -158,4 +194,11 @@ class View:
     def init_player(self, x, y):
         self.player_sprite = PlayerSprite(self.PLAYER_COLOR, self.MAZE_COLOR, x, y, self.PLAYER_RADIUS)
         self.player_sprite_image = pygame.sprite.RenderPlain(self.player_sprite)
+
+    def init_shelf_view(self, shelf_order, stock_order):
+        self.shelf_view = ShelfGame(shelf_order, stock_order, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+
+    def draw_shelf(self):
+        shelf_sprite = self.shelf_view.shelf_sprite
+        self.screen.blit(shelf_sprite.image, shelf_sprite.rect)
 

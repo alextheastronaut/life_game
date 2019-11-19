@@ -117,6 +117,16 @@ class Cell:
         self.open_walls = 0  # bitmap representing whether the cell's wall is open or closed.
 
 
+class RestockShelfGame:
+    ITEMS = ['condiments', 'steak', 'sushi', 'taco', 'watermelon']
+
+    def __init__(self):
+        random.shuffle(self.ITEMS)
+        self.shelf_order = self.ITEMS.copy()
+        random.shuffle(self.ITEMS)
+        self.stock_order = self.ITEMS.copy()
+
+
 class Player:
     def __init__(self, px, py, offset_x, offset_y):
         # Save the start position
@@ -139,6 +149,7 @@ class Model:
         self.slot_machine = SlotMachine()
         self.maze = Maze(15, 20)
         self.player = None
+        self.shelf_game = RestockShelfGame()
 
     def init_player(self, x, y, offset_x, offset_y):
         self.player = Player(x, y, offset_x, offset_y)
