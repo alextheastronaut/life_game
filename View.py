@@ -27,9 +27,29 @@ class FoodSprite(pygame.sprite.Sprite):
         super().__init__()
         self.name = name
         self.image = pygame.image.load("images/" + icon_image)
-        self.image = pygame.transform.scale(self.image, (150, 150))
+        self.image = pygame.transform.scale(self.image, (125, 90))
         self.image = self.image.convert_alpha()
         self.rect = self.image.get_rect()
+
+        self.width = 125
+        self.height = 90
+
+        self.pos = None
+        self.starting_pos = None
+
+    def set_starting_pos(self, x, y):
+        self.pos = self.starting_pos = (x, y)
+        self.rect = self.rect.move(self.pos)
+
+    def reset_starting_pos(self):
+        self.update_pos(self, self.starting_pos[0], self.starting_pos[1])
+
+    def update_pos(self, x, y):
+        self.pos = (x, y)
+        self.rect.x = x
+        self.rect.y = y
+
+        self.update()
 
 
 class BackgroundSprite(pygame.sprite.Sprite):
@@ -47,10 +67,10 @@ class BackgroundSprite(pygame.sprite.Sprite):
 
 class ShelfGame:
     def __init__(self, shelf_order, stock_order, screen_width, screen_height):
-        self.food_sprites = []
+        self.stock_order = []
         for item_name in stock_order:
             filename = item_name + '.png'
-            self.food_sprites.append(FoodSprite(item_name, filename))
+            self.stock_order.append(FoodSprite(item_name, filename))
 
         self.shelf_sprite = BackgroundSprite('shelf.png', screen_width, screen_height)
 
@@ -134,6 +154,8 @@ class View:
         self.player_sprite_image = None
 
         self.shelf_view = None
+        self.food_sprite_rects = None
+        self.food_sprite_group = None
 
     def spin_results_to_icon_images(self, spin_results):
         icon_images = [0] * 3
@@ -171,7 +193,6 @@ class View:
                     if cells[y][x].open_walls & down:
                         self.draw_block(x * (self.PATH_WIDTH + 1) + p,
                                         y * (self.PATH_WIDTH + 1) + self.PATH_WIDTH)
-
                     if cells[y][x].open_walls & right:
                         self.draw_block(x * (self.PATH_WIDTH + 1) + self.PATH_WIDTH,
                                         y * (self.PATH_WIDTH + 1) + p)
@@ -197,26 +218,42 @@ class View:
 
     def init_shelf_view(self, shelf_order, stock_order):
         self.shelf_view = ShelfGame(shelf_order, stock_order, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+        self.set_food_starting_pos()
 
     def draw_shelf(self):
+        self.screen.fill((255, 255, 255))
         shelf_sprite = self.shelf_view.shelf_sprite
         self.screen.blit(shelf_sprite.image, shelf_sprite.rect)
-        self.draw_food()
+        for food_sprite in self.shelf_view.stock_order:
+            self.screen.blit(food_sprite.image, food_sprite.rect)
 
-    def draw_food(self):
+        pygame.display.update(shelf_sprite.rect)
+        pygame.display.update(self.food_sprite_rects)
+        pygame.sprite.RenderUpdates(self.food_sprite_group)
+
+    def set_food_starting_pos(self):
+        self.food_sprite_rects = []
+
         shelf_sprite = self.shelf_view.shelf_sprite
         shelf_sprite_dim = shelf_sprite.image.get_size()
 
+        shelf_sprite_width = shelf_sprite_dim[0]
+        shelf_sprite_height = shelf_sprite_dim[1]
+
         left_side_px = shelf_sprite.pos[0] / 2
-
-        right_side_px = (self.SCREEN_WIDTH - shelf_sprite.pos[0]) / 2
-
+        # Draw three food sprites on left side of shelf sprite
         for i in range(3):
-            food_sprite = self.shelf_view.food_sprites[i]
-            left_side_py = shelf_sprite.pos[1] + shelf_sprite_dim[1] * i // 2
-            #centered_pos = self.center_sprite((left_side_px, left_side_py))
-            self.screen.blit(food_sprite.image, (left_side_px - 75, left_side_py - 75))
+            food_sprite = self.shelf_view.stock_order[i]
+            left_side_py = shelf_sprite.pos[1] + (shelf_sprite_height - food_sprite.height) * i // 2
+            food_sprite.set_starting_pos(left_side_px - food_sprite.width // 2, left_side_py)
 
-    def center_sprite_x(self, pos):
-        return self.SCREEN_WIDTH // 2 - pos[0] // 2, self.SCREEN_HEIGHT // 2 - pos[1] // 2
+        right_side_px = (self.SCREEN_WIDTH - shelf_sprite_width) * 2
+        # Draw three food sprites on left side of shelf sprite
+        for i in range(2):
+            food_sprite = self.shelf_view.stock_order[3 + i]
+            right_side_py = shelf_sprite.pos[1] + (shelf_sprite_height - food_sprite.height) * (i + 1) // 3
+            food_sprite.set_starting_pos(right_side_px - food_sprite.width // 2, right_side_py)
 
+        for food_sprite in self.shelf_view.stock_order:
+            self.food_sprite_rects.append(food_sprite.rect)
+            self.food_sprite_group = pygame.sprite.Group(self.shelf_view.stock_order)

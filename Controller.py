@@ -16,6 +16,10 @@ class Controller:
         self.clock.tick(self.FRAME_RATE)
         self.start_time = 0
 
+        self.selected_food_sprite = None
+        self.selected_offset_x = None
+        self.selected_offset_y = None
+
     def display_slot_machine_icons(self, results_to_display):
         """Displays previously rolled icons in slot machine"""
         display_results = self.view.spin_results_to_icon_images(results_to_display)
@@ -107,6 +111,10 @@ class Controller:
         self.view.init_player(offset_coord[0], offset_coord[1])
 
     def play_maze_game(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+
         # Handle key input
         keys = pygame.key.get_pressed()
         if keys[pygame.K_UP] or keys[pygame.K_w]:
@@ -124,14 +132,41 @@ class Controller:
 
         offset_coord = self.model.player.get_offset_px()
         self.view.player_sprite.set_coord(offset_coord[0], offset_coord[1])
+
         self.view.draw_maze_screen()
+
+        return True
 
     def init_shelf_game(self):
         shelf_game = self.model.shelf_game
         self.view.init_shelf_view(shelf_game.shelf_order, shelf_game.stock_order)
 
     def play_shelf_game(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                stock_sprites = self.view.shelf_view.stock_order
+                # Check if a bet button is clicked then set the bet value to the value of that button
+                for i, food_sprite in enumerate(stock_sprites):
+                    if food_sprite.rect.collidepoint(event.pos):
+                        self.selected_food_sprite = i
+                        self.selected_offset_x = food_sprite.rect.x - event.pos[0]
+                        self.selected_offset_y = food_sprite.rect.y - event.pos[1]
+            elif event.type == pygame.MOUSEBUTTONUP:
+                self.selected_food_sprite = None
+            elif event.type == pygame.MOUSEMOTION:
+                if self.selected_food_sprite is not None:
+                    stock_sprites = self.view.shelf_view.stock_order
+
+                    new_px = event.pos[0] + self.selected_offset_x
+                    new_py = event.pos[1] + self.selected_offset_y
+
+                    stock_sprites[self.selected_food_sprite].update_pos(new_px, new_py)
+
         self.view.draw_shelf()
+
+        return True
 
     def start_game(self):
 
@@ -143,13 +178,9 @@ class Controller:
         continue_playing = True
 
         while continue_playing:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    continue_playing = False
-
             # continue_playing = self.play_slot_machine()
-            # self.play_maze_game()
-            self.play_shelf_game()
+            # continue_playing = self.play_maze_game()
+            continue_playing = self.play_shelf_game()
 
             # Refresh the display
             pygame.display.flip()
