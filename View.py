@@ -48,7 +48,7 @@ class BackgroundSprite(pygame.sprite.Sprite):
 class ShelfGame:
     def __init__(self, shelf_order, stock_order, screen_width, screen_height):
         self.food_sprites = []
-        for item_name in shelf_order:
+        for item_name in stock_order:
             filename = item_name + '.png'
             self.food_sprites.append(FoodSprite(item_name, filename))
 
@@ -201,4 +201,22 @@ class View:
     def draw_shelf(self):
         shelf_sprite = self.shelf_view.shelf_sprite
         self.screen.blit(shelf_sprite.image, shelf_sprite.rect)
+        self.draw_food()
+
+    def draw_food(self):
+        shelf_sprite = self.shelf_view.shelf_sprite
+        shelf_sprite_dim = shelf_sprite.image.get_size()
+
+        left_side_px = shelf_sprite.pos[0] / 2
+
+        right_side_px = (self.SCREEN_WIDTH - shelf_sprite.pos[0]) / 2
+
+        for i in range(3):
+            food_sprite = self.shelf_view.food_sprites[i]
+            left_side_py = shelf_sprite.pos[1] + shelf_sprite_dim[1] * i // 2
+            #centered_pos = self.center_sprite((left_side_px, left_side_py))
+            self.screen.blit(food_sprite.image, (left_side_px - 75, left_side_py - 75))
+
+    def center_sprite_x(self, pos):
+        return self.SCREEN_WIDTH // 2 - pos[0] // 2, self.SCREEN_HEIGHT // 2 - pos[1] // 2
 
