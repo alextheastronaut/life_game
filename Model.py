@@ -126,6 +126,9 @@ class RestockShelfGame:
         random.shuffle(self.ITEMS)
         self.stock_order = self.ITEMS.copy()
 
+    def reshuffle_items(self):
+        self.__init__()
+
 
 class Player:
     def __init__(self, px, py, offset_x, offset_y):

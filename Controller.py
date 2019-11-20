@@ -154,7 +154,9 @@ class Controller:
                         self.selected_offset_x = food_sprite.rect.x - event.pos[0]
                         self.selected_offset_y = food_sprite.rect.y - event.pos[1]
             elif event.type == pygame.MOUSEBUTTONUP:
-                self.selected_food_sprite = None
+                if self.selected_food_sprite is not None:
+                    self.view.can_place_item(self.selected_food_sprite, event.pos)
+                    self.selected_food_sprite = None
             elif event.type == pygame.MOUSEMOTION:
                 if self.selected_food_sprite is not None:
                     stock_sprites = self.view.shelf_view.stock_order

@@ -22,17 +22,26 @@ class Sprite(pygame.sprite.Sprite):
         self.pos = pos
 
 
+class TextSprite(pygame.sprite.Sprite):
+    def __init__(self, font, text, color, pos):
+        super().__init__()
+        self.text_surface = font.render(text, False, color)
+        self.text = text
+        self.pos = pos
+
+
 class FoodSprite(pygame.sprite.Sprite):
     def __init__(self, name, icon_image):
         super().__init__()
-        self.name = name
-        self.image = pygame.image.load("images/" + icon_image)
-        self.image = pygame.transform.scale(self.image, (125, 90))
-        self.image = self.image.convert_alpha()
-        self.rect = self.image.get_rect()
 
         self.width = 125
-        self.height = 90
+        self.height = 94
+
+        self.name = name
+        self.image = pygame.image.load("images/" + icon_image)
+        self.image = pygame.transform.scale(self.image, (self.width, self.height))
+        self.image = self.image.convert_alpha()
+        self.rect = self.image.get_rect()
 
         self.pos = None
         self.starting_pos = None
@@ -42,7 +51,7 @@ class FoodSprite(pygame.sprite.Sprite):
         self.rect = self.rect.move(self.pos)
 
     def reset_starting_pos(self):
-        self.update_pos(self, self.starting_pos[0], self.starting_pos[1])
+        self.update_pos(self.starting_pos[0], self.starting_pos[1])
 
     def update_pos(self, x, y):
         self.pos = (x, y)
@@ -67,12 +76,57 @@ class BackgroundSprite(pygame.sprite.Sprite):
 
 class ShelfGame:
     def __init__(self, shelf_order, stock_order, screen_width, screen_height):
+        self.shelf_order_names = shelf_order
         self.stock_order = []
         for item_name in stock_order:
             filename = item_name + '.png'
             self.stock_order.append(FoodSprite(item_name, filename))
 
         self.shelf_sprite = BackgroundSprite('shelf.png', screen_width, screen_height)
+        self.shelf_sprite_size = self.shelf_sprite.image.get_size()
+
+        self.shelf_height_offset = 21
+        self.shelf_width_offset = 20
+        self.opening_width = self.shelf_sprite_size[0] - 2 * self.shelf_width_offset
+        self.opening_height = self.stock_order[0].height
+
+        self.opening_rects = self.set_opening_rects()
+
+        self.font = pygame.font.SysFont('Comic Sans MS', 30)
+        self.shelf_order_text = self.set_shelf_order_text(shelf_order)
+        self.shelf_order_sprite_pos = self.set_shelf_order_sprite_pos()
+
+    def set_opening_rects(self):
+        opening_rects = []
+
+        first_opening_top_left_px = self.shelf_sprite.pos[0] + self.shelf_width_offset
+        first_opening_top_left_py = self.shelf_sprite.pos[1] + self.shelf_height_offset
+        for i in range(5):
+            opening_top_left_py = first_opening_top_left_py + (self.opening_height + self.shelf_height_offset) * i
+            image = pygame.Surface([self.opening_width, self.opening_height])
+            rect = image.get_rect().move((first_opening_top_left_px, opening_top_left_py))
+            opening_rects.append(rect)
+
+        return opening_rects
+
+    def set_shelf_order_text(self, shelf_order):
+        shelf_order_text = []
+        for i in range(5):
+            text_pos_x = self.opening_rects[i].x
+            text_pos_y = self.opening_rects[i].y
+            text_color = (0, 0, 0)
+            shelf_order_text.append(TextSprite(self.font, shelf_order[i], text_color, (text_pos_x, text_pos_y)))
+
+        return shelf_order_text
+
+    def set_shelf_order_sprite_pos(self):
+        shelf_order_sprite_pos = []
+        for i in range(5):
+            sprite_pos_x = self.opening_rects[i].x + self.opening_width // 2 - self.stock_order[0].width // 2
+            sprite_pos_y = self.opening_rects[i].y
+            shelf_order_sprite_pos.append((sprite_pos_x, sprite_pos_y))
+
+        return shelf_order_sprite_pos
 
 
 class Sound:
@@ -87,7 +141,7 @@ class PlayerSprite(pygame.sprite.Sprite):
         super().__init__()
 
         # Create the rectangular image, fill and set background to transparent
-        self.image = self.image = pygame.Surface([radius * 2, radius * 2])
+        self.image = pygame.Surface([radius * 2, radius * 2])
         self.image.fill(maze_color)
         self.image.set_colorkey(maze_color)
 
@@ -122,6 +176,7 @@ class View:
     def __init__(self, maze):
         """ Constructs view, setting up values for coordinates and colors"""
         pygame.init()
+        pygame.font.init()
 
         # Initialize sounds
         pygame.mixer.init()
@@ -227,6 +282,9 @@ class View:
         for food_sprite in self.shelf_view.stock_order:
             self.screen.blit(food_sprite.image, food_sprite.rect)
 
+        for text_sprite in self.shelf_view.shelf_order_text:
+            self.screen.blit(text_sprite.text_surface, text_sprite.pos)
+
         pygame.display.update(shelf_sprite.rect)
         pygame.display.update(self.food_sprite_rects)
         pygame.sprite.RenderUpdates(self.food_sprite_group)
@@ -257,3 +315,19 @@ class View:
         for food_sprite in self.shelf_view.stock_order:
             self.food_sprite_rects.append(food_sprite.rect)
             self.food_sprite_group = pygame.sprite.Group(self.shelf_view.stock_order)
+
+    def can_place_item(self, food_sprite, mouse_pos):
+        print(self.shelf_view.opening_rects[1][0], self.shelf_view.opening_rects[1][1])
+        for i, opening_rect in enumerate(self.shelf_view.opening_rects):
+            if opening_rect.collidepoint(mouse_pos):
+                stock_order = self.shelf_view.stock_order
+                if stock_order[food_sprite].name is self.shelf_view.shelf_order_names[i]:
+                    food_sprite_new_x = self.shelf_view.shelf_order_sprite_pos[i][0]
+                    food_sprite_new_y = self.shelf_view.shelf_order_sprite_pos[i][1]
+                    print(food_sprite_new_x, food_sprite_new_y)
+                    stock_order[food_sprite].update_pos(food_sprite_new_x, food_sprite_new_y)
+                    return True
+
+        self.shelf_view.stock_order[food_sprite].reset_starting_pos()
+        return False
+
