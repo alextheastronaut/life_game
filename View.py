@@ -156,6 +156,7 @@ class PlayerSprite(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
 
+
 class ApplicationTypingGame:
     def __init__(self, screen_width, screen_height):
         self.background = BackgroundSprite('application_form.jpg', screen_width, screen_height)
@@ -163,6 +164,7 @@ class ApplicationTypingGame:
         self.middle_name = 'Lei'
         self.last_name = 'Chen'
         self.address = '6560 Canyon Cove Drive'
+        self.city_street_zip = 'Salt Lake City, Utah, 84121'
         self.number = '385 212-0289'
         self.eligible = 'X'
 
@@ -173,12 +175,15 @@ class ApplicationTypingGame:
         self.middle_name_text = None
         self.last_name_text = None
         self.address_text = None
+        self.city_street_zip_text = None
         self.number_text = None
         self.eligible_text = None
 
         self.set_name_texts(self.text_color)
 
-        self.text = pygame.sprite.Group(self.first_name_text, self.middle_name_text, self.last_name_text)
+        self.text = pygame.sprite.Group(self.first_name_text, self.middle_name_text, self.last_name_text,
+                                        self.address_text, self.city_street_zip_text,
+                                        self.number_text, self.eligible_text)
 
     def draw(self, screen):
         screen.blit(self.background.image, self.background.pos)
@@ -194,17 +199,29 @@ class ApplicationTypingGame:
 
         middle_name_pos_x = first_name_pos_x + 10
         middle_name_pos_y = first_name_pos_y + name_offset
-        self.middle_name_text = TextSprite(self.font, self.middle_name, text_color, (middle_name_pos_x, middle_name_pos_y))
+        self.middle_name_text = TextSprite(self.font, self.middle_name, text_color, (middle_name_pos_x,
+                                                                                     middle_name_pos_y))
 
         last_name_pos_x = first_name_pos_x
         last_name_pos_y = middle_name_pos_y + name_offset
         self.last_name_text = TextSprite(self.font, self.last_name, text_color, (last_name_pos_x, last_name_pos_y))
 
-        
+        address_pos_x = first_name_pos_x - 60
+        address_pos_y = last_name_pos_y + 90
+        self.address_text = TextSprite(self.font, self.address, text_color, (address_pos_x, address_pos_y))
 
+        city_state_zip_pos_x = first_name_pos_x - 60
+        city_state_zip_pos_y = address_pos_y + 85
+        self.city_street_zip_text = TextSprite(self.font, self.city_street_zip, text_color, (city_state_zip_pos_x,
+                                                                                             city_state_zip_pos_y))
 
+        number_pos_x = first_name_pos_x - 65
+        number_pos_y = city_state_zip_pos_y + 90
+        self.number_text = TextSprite(self.font, self.number, text_color, (number_pos_x, number_pos_y))
 
-
+        eligible_pos_x = first_name_pos_x - 35
+        eligible_pos_y = number_pos_y + 85
+        self.eligible_text = TextSprite(self.font, self.eligible, text_color, (eligible_pos_x, eligible_pos_y))
 
 
 class View:
@@ -388,4 +405,3 @@ class View:
 
         self.shelf_view.stock_order[food_sprite].reset_starting_pos()
         return False
-
