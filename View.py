@@ -156,6 +156,56 @@ class PlayerSprite(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
 
+class ApplicationTypingGame:
+    def __init__(self, screen_width, screen_height):
+        self.background = BackgroundSprite('application_form.jpg', screen_width, screen_height)
+        self.first_name = 'Alex'
+        self.middle_name = 'Lei'
+        self.last_name = 'Chen'
+        self.address = '6560 Canyon Cove Drive'
+        self.number = '385 212-0289'
+        self.eligible = 'X'
+
+        self.font = pygame.font.SysFont('Comic Sans MS', 30)
+        self.text_color = (0, 0, 0)
+
+        self.first_name_text = None
+        self.middle_name_text = None
+        self.last_name_text = None
+        self.address_text = None
+        self.number_text = None
+        self.eligible_text = None
+
+        self.set_name_texts(self.text_color)
+
+        self.text = pygame.sprite.Group(self.first_name_text, self.middle_name_text, self.last_name_text)
+
+    def draw(self, screen):
+        screen.blit(self.background.image, self.background.pos)
+        for text in self.text:
+            screen.blit(text.text_surface, text.pos)
+
+    def set_name_texts(self, text_color):
+        name_offset = 45
+
+        first_name_pos_x = self.background.pos[0] + 110
+        first_name_pos_y = self.background.pos[1] + 225
+        self.first_name_text = TextSprite(self.font, self.first_name, text_color, (first_name_pos_x, first_name_pos_y))
+
+        middle_name_pos_x = first_name_pos_x + 10
+        middle_name_pos_y = first_name_pos_y + name_offset
+        self.middle_name_text = TextSprite(self.font, self.middle_name, text_color, (middle_name_pos_x, middle_name_pos_y))
+
+        last_name_pos_x = first_name_pos_x
+        last_name_pos_y = middle_name_pos_y + name_offset
+        self.last_name_text = TextSprite(self.font, self.last_name, text_color, (last_name_pos_x, last_name_pos_y))
+
+        
+
+
+
+
+
 
 class View:
     BACKGROUND_IMAGE_NAME = 'background.png'
@@ -211,6 +261,8 @@ class View:
         self.shelf_view = None
         self.food_sprite_rects = None
         self.food_sprite_group = None
+
+        self.application_game = ApplicationTypingGame(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
 
     def spin_results_to_icon_images(self, spin_results):
         icon_images = [0] * 3
@@ -274,6 +326,12 @@ class View:
     def init_shelf_view(self, shelf_order, stock_order):
         self.shelf_view = ShelfGame(shelf_order, stock_order, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
         self.set_food_starting_pos()
+
+    # def init_application_view(self):
+    #     self.application_game = ApplicationTypingGame(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+    def draw_application_game(self):
+        self.screen.fill((255, 255, 255))
+        self.application_game.draw(self.screen)
 
     def draw_shelf(self):
         self.screen.fill((255, 255, 255))

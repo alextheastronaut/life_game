@@ -170,11 +170,14 @@ class Controller:
 
         return True
 
+    def play_application_game(self):
+        self.view.draw_application_game()
+
     def start_game(self):
 
         # self.init_slot_machine()
         # self.init_maze_game()
-        self.init_shelf_game()
+        # self.init_shelf_game()
 
         # Continue looping while the player hasn't ended the game
         continue_playing = True
@@ -182,7 +185,8 @@ class Controller:
         while continue_playing:
             # continue_playing = self.play_slot_machine()
             # continue_playing = self.play_maze_game()
-            continue_playing = self.play_shelf_game()
+            # continue_playing = self.play_shelf_game()
+            self.play_application_game()
 
             # Refresh the display
             pygame.display.flip()
