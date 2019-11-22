@@ -181,14 +181,27 @@ class ApplicationTypingGame:
 
         self.set_name_texts(self.text_color)
 
-        self.text = pygame.sprite.Group(self.first_name_text, self.middle_name_text, self.last_name_text,
-                                        self.address_text, self.city_street_zip_text,
-                                        self.number_text, self.eligible_text)
+        self.text_surface_list = [self.first_name_text, self.middle_name_text, self.last_name_text, self.address_text,
+                                  self.city_street_zip_text, self.number_text, self.eligible_text]
+
+        self.current_word_idx = 0
+        self.input_box = self.init_input_box(screen_width, screen_height)
+
+    def init_input_box(self, screen_width, screen_height):
+        right_of_form_px = self.background.rect.x + self.background.image.get_size()[0]
+        center_screen_py = screen_height // 2 - 15
+
+        #box_px = right_of_form_px + (screen_width - right_of_form_px) // 2
+        box_px = right_of_form_px + 17
+        box_py = center_screen_py
+
+        return InputBox(box_px, box_py, 300, 30, self.font)
 
     def draw(self, screen):
         screen.blit(self.background.image, self.background.pos)
-        for text in self.text:
+        for text in self.text_surface_list:
             screen.blit(text.text_surface, text.pos)
+        self.input_box.draw(screen)
 
     def set_name_texts(self, text_color):
         name_offset = 45
@@ -222,6 +235,48 @@ class ApplicationTypingGame:
         eligible_pos_x = first_name_pos_x - 35
         eligible_pos_y = number_pos_y + 85
         self.eligible_text = TextSprite(self.font, self.eligible, text_color, (eligible_pos_x, eligible_pos_y))
+
+    def handle_event(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    if self.input_box.text == self.text_surface_list[self.current_word_idx].text:
+                        self.input_box.clear_text()
+                        self.current_word_idx += 1
+                elif event.key == pygame.K_BACKSPACE:
+                    self.input_box.text = self.input_box.text[:-1]
+                else:
+                    self.input_box.text += event.unicode
+
+        return True
+
+
+class InputBox:
+
+    def __init__(self, x, y, w, h, font, text=''):
+        image = pygame.Surface([w, h])
+        self.rect = image.get_rect().move((x, y))
+        self.color = (0, 0, 0)
+        self.text = text
+        self.font = font
+        self.txt_surface = font.render(text, True, self.color)
+
+    def update(self):
+        # Resize the box if the text is too long.
+        width = max(200, self.txt_surface.get_width() + 10)
+        self.rect.w = width
+
+    def clear_text(self):
+        self.text = ''
+
+    def draw(self, screen):
+        self.txt_surface = self.font.render(self.text, True, self.color)
+        # Blit the text.
+        screen.blit(self.txt_surface, (self.rect.x + 5, self.rect.y + 5))
+        # Blit the rect.
+        pygame.draw.rect(screen, self.color, self.rect, 2)
 
 
 class View:

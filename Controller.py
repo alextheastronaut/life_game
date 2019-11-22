@@ -172,6 +172,7 @@ class Controller:
 
     def play_application_game(self):
         self.view.draw_application_game()
+        return self.view.application_game.handle_event()
 
     def start_game(self):
 
@@ -186,7 +187,7 @@ class Controller:
             # continue_playing = self.play_slot_machine()
             # continue_playing = self.play_maze_game()
             # continue_playing = self.play_shelf_game()
-            self.play_application_game()
+            continue_playing = self.play_application_game()
 
             # Refresh the display
             pygame.display.flip()
