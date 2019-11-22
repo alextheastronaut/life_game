@@ -4,6 +4,15 @@ import random
 from Model import Model
 from Model import Direction
 from View import View
+from enum import Enum
+
+
+class Screen(Enum):
+    Title = 1
+    Slot = 2
+    Maze = 3
+    Restock = 4
+    Application = 5
 
 
 class Controller:
@@ -19,6 +28,8 @@ class Controller:
         self.selected_food_sprite = None
         self.selected_offset_x = None
         self.selected_offset_y = None
+
+        self.current_screen = Screen.Title
 
     def display_slot_machine_icons(self, results_to_display):
         """Displays previously rolled icons in slot machine"""
@@ -40,7 +51,7 @@ class Controller:
         for event in pygame.event.get():
             # Stop the loop when the user chooses to quit the game
             if event.type == pygame.QUIT:
-                return False
+                pygame.quit()
             # When the user pushes the mouse button down, Check which sprites are involved
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # Check if spin button is clicked
@@ -66,7 +77,7 @@ class Controller:
         # This section is the one responsible for the reel animation
         # While the current time - the time the spin button is clicked is less than one
         # Change the images in the reel and show the previous/current texts
-        if self.model.slot_machine.spinning:
+        if self.model.slot_machine.spinning and self.model.slot_machine.can_spin:
             if time.time() - self.start_time < 1:
                 # Display the current icons in the reel so it does not change until the pulling the lever
                 # sound is finished
@@ -86,8 +97,8 @@ class Controller:
                 spin_results = self.model.slot_machine.results
                 self.display_slot_machine_icons(spin_results)
 
-                # Spinning is now false. The user can hit spin again
-                self.model.slot_machine.spinning = False
+                # # Spinning is now false. The user can hit spin again
+                # self.model.slot_machine.spinning = False
 
                 # Set the prev results to the current images to be used again on animation
                 self.model.slot_machine.set_prev_results_to_results()
@@ -97,12 +108,12 @@ class Controller:
                 self.view.spinning_snd.is_playing = False
 
                 self.view.spin_result.sound.play()
+
+                self.model.slot_machine.can_spin = False
         else:
             # Display previous results if slot machine isn't spinning
             prev_results = self.model.slot_machine.prev_results
             self.display_slot_machine_icons(prev_results)
-
-        return True
 
     def init_maze_game(self):
         self.view.draw_maze(self.model.maze)
@@ -174,26 +185,47 @@ class Controller:
         self.view.draw_application_game()
         return self.view.application_game.handle_event()
 
-    def start_game(self):
+    def display_title_screen(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            elif event.type == pygame.MOUSEMOTION:
+                start_button = self.view.title_screen.start_button
+                quit_button = self.view.title_screen.quit_button
+                start_button.selected = start_button.rect.collidepoint(event.pos)
+                quit_button.selected = quit_button.rect.collidepoint(event.pos)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                start_button = self.view.title_screen.start_button
+                quit_button = self.view.title_screen.quit_button
+                if start_button.rect.collidepoint(event.pos):
+                    self.current_screen = Screen.Slot
+                elif quit_button.rect.collidepoint(event.pos):
+                    pygame.quit()
 
+        self.view.draw_title_screen()
+
+    def start_game(self):
         # self.init_slot_machine()
         # self.init_maze_game()
         # self.init_shelf_game()
+        slot_machine_init = False
 
-        # Continue looping while the player hasn't ended the game
         continue_playing = True
-
         while continue_playing:
-            # continue_playing = self.play_slot_machine()
-            # continue_playing = self.play_maze_game()
-            # continue_playing = self.play_shelf_game()
-            continue_playing = self.play_application_game()
+            if self.current_screen is Screen.Title:
+                self.display_title_screen()
+            elif self.current_screen is Screen.Slot:
+                if not slot_machine_init:
+                    self.init_slot_machine()
+                    slot_machine_init = True
+                self.play_slot_machine()
+        # continue_playing = self.play_slot_machine()
+        # continue_playing = self.play_maze_game()
+        # continue_playing = self.play_shelf_game()
+        # continue_playing = self.play_application_game()
 
             # Refresh the display
             pygame.display.flip()
-
-        pygame.quit()
-
 
 # Calls the main function
 if __name__ == "__main__":

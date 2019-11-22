@@ -9,9 +9,10 @@ class SlotMachine:
         self.prev_results = 3 * [0]
         self.display_spinning = self.prev_results.copy()
         self.spinning = False
-        random.seed()
+        self.can_spin = True
 
     def spin(self):
+        random.seed()
         # Chance to be woman, black, and in poverty, respectively.
         chance = [50, 17, 20]
 

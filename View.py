@@ -26,8 +26,19 @@ class TextSprite(pygame.sprite.Sprite):
     def __init__(self, font, text, color, pos):
         super().__init__()
         self.text_surface = font.render(text, False, color)
+        self.color = color
         self.text = text
         self.pos = pos
+
+    def emphasize_and_change_color(self, color):
+        font = pygame.font.SysFont('Comic Sans MS', 30, bold=True)
+        font.set_underline(True)
+        self.text_surface = font.render(self.text, False, color)
+
+    def reset_and_change_color(self, color):
+        font = pygame.font.SysFont('Comic Sans MS', 30, bold=False)
+        font.set_underline(False)
+        self.text_surface = font.render(self.text, False, color)
 
 
 class FoodSprite(pygame.sprite.Sprite):
@@ -135,28 +146,6 @@ class Sound:
         self.is_playing = False
 
 
-class PlayerSprite(pygame.sprite.Sprite):
-    def __init__(self, color, maze_color, x, y, radius):
-        # Call the parent class (Sprite) constructor
-        super().__init__()
-
-        # Create the rectangular image, fill and set background to transparent
-        self.image = pygame.Surface([radius * 2, radius * 2])
-        self.image.fill(maze_color)
-        self.image.set_colorkey(maze_color)
-
-        # Draw our player onto the transparent rectangle
-        pygame.draw.circle(self.image, color, (radius, radius), radius)
-
-        self.rect = self.image.get_rect()
-        self.rect.x = x
-        self.rect.y = y
-
-    def set_coord(self, x, y):
-        self.rect.x = x
-        self.rect.y = y
-
-
 class ApplicationTypingGame:
     def __init__(self, screen_width, screen_height):
         self.background = BackgroundSprite('application_form.jpg', screen_width, screen_height)
@@ -165,11 +154,13 @@ class ApplicationTypingGame:
         self.last_name = 'Chen'
         self.address = '6560 Canyon Cove Drive'
         self.city_street_zip = 'Salt Lake City, Utah, 84121'
-        self.number = '385 212-0289'
+        self.number = '385-212-0289'
         self.eligible = 'X'
 
         self.font = pygame.font.SysFont('Comic Sans MS', 30)
-        self.text_color = (0, 0, 0)
+        self.default_color = (128, 128, 128)
+        self.typed_color = (0, 0, 0)
+        self.emph_color = (255, 0, 0)
 
         self.first_name_text = None
         self.middle_name_text = None
@@ -179,7 +170,7 @@ class ApplicationTypingGame:
         self.number_text = None
         self.eligible_text = None
 
-        self.set_name_texts(self.text_color)
+        self.set_name_texts(self.default_color)
 
         self.text_surface_list = [self.first_name_text, self.middle_name_text, self.last_name_text, self.address_text,
                                   self.city_street_zip_text, self.number_text, self.eligible_text]
@@ -187,11 +178,13 @@ class ApplicationTypingGame:
         self.current_word_idx = 0
         self.input_box = self.init_input_box(screen_width, screen_height)
 
+        self.text_surface_list[0].emphasize_and_change_color(self.emph_color)
+
     def init_input_box(self, screen_width, screen_height):
         right_of_form_px = self.background.rect.x + self.background.image.get_size()[0]
         center_screen_py = screen_height // 2 - 15
 
-        #box_px = right_of_form_px + (screen_width - right_of_form_px) // 2
+        # box_px = right_of_form_px + (screen_width - right_of_form_px) // 2
         box_px = right_of_form_px + 17
         box_py = center_screen_py
 
@@ -242,9 +235,15 @@ class ApplicationTypingGame:
                 return False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
-                    if self.input_box.text == self.text_surface_list[self.current_word_idx].text:
+                    current_surface = self.text_surface_list[self.current_word_idx]
+                    if self.input_box.text == current_surface.text:
                         self.input_box.clear_text()
+                        current_surface.reset_and_change_color(self.typed_color)
+
                         self.current_word_idx += 1
+                        next_surface = self.text_surface_list[self.current_word_idx]
+                        next_surface.emphasize_and_change_color(self.emph_color)
+
                 elif event.key == pygame.K_BACKSPACE:
                     self.input_box.text = self.input_box.text[:-1]
                 else:
@@ -277,6 +276,92 @@ class InputBox:
         screen.blit(self.txt_surface, (self.rect.x + 5, self.rect.y + 5))
         # Blit the rect.
         pygame.draw.rect(screen, self.color, self.rect, 2)
+
+
+class TitleScreen:
+    def __init__(self, screen_width, screen_height):
+        title_font = pygame.font.Font('freesansbold.ttf', 115)
+        title_x = screen_width // 2 - 350
+        title_y = screen_height // 2 - 150
+        self.title = TextSprite(title_font, 'Meritocracy?', (0, 0, 0), (title_x, title_y))
+
+        button_font = pygame.font.Font('freesansbold.ttf', 30)
+        b_w = 125
+        b_h = 75
+        self.start_default_color = (0, 200, 0)
+        self.start_hover_color = (0, 255, 0)
+
+        start_b_x = screen_width // 2 - b_w // 2
+        start_b_y = title_y + 150
+        start_txt_x = start_b_x + 27
+        start_txt_y = start_b_y + 25
+        self.start_text = TextSprite(button_font, 'Start', (0, 0, 0), (start_txt_x, start_txt_y))
+        self.start_button = Button(start_b_x, start_b_y, b_w, b_h,
+                                   self.start_hover_color, self.start_default_color, self.start_text)
+
+        self.quit_hover_color = (255, 0, 0)
+        self.quit_default_color = (200, 0, 0)
+
+        quit_b_x = start_b_x
+        quit_b_y = start_b_y + 100
+        quit_txt_x = quit_b_x + 30
+        quit_txt_y = quit_b_y + 25
+        self.quit_text = TextSprite(button_font, 'Quit', (0, 0, 0), (quit_txt_x, quit_txt_y))
+        self.quit_button = Button(quit_b_x, quit_b_y, b_w, b_h,
+                                  self.quit_hover_color, self.quit_default_color, self.quit_text)
+
+    def draw(self, screen):
+        screen.blit(self.title.text_surface, self.title.pos)
+        self.start_button.draw(screen)
+        self.quit_button.draw(screen)
+
+class Button(pygame.sprite.Sprite):
+    def __init__(self, x, y, b_w, b_h, hover_color, default_color, text_sprite):
+        super().__init__()
+        self.image = pygame.Surface([b_w, b_h])
+        white = (255, 255, 255)
+        self.image.fill(white)
+        self.image.set_colorkey(white)
+
+        self.hover_color = hover_color
+        self.default_color = default_color
+        self.dim = (x, y, b_w, b_h)
+
+        self.rect = self.image.get_rect().move((x, y))
+
+        self.selected = False
+
+        self.text_sprite = text_sprite
+
+    def draw(self, screen):
+        if self.selected:
+            pygame.draw.rect(screen, self.hover_color, self.dim)
+        else:
+            pygame.draw.rect(screen, self.default_color, self.dim)
+
+        screen.blit(self.text_sprite.text_surface, self.text_sprite.pos)
+
+
+class PlayerSprite(pygame.sprite.Sprite):
+    def __init__(self, color, maze_color, x, y, radius):
+        # Call the parent class (Sprite) constructor
+        super().__init__()
+
+        # Create the rectangular image, fill and set background to transparent
+        self.image = pygame.Surface([radius * 2, radius * 2])
+        self.image.fill(maze_color)
+        self.image.set_colorkey(maze_color)
+
+        # Draw our player onto the transparent rectangle
+        pygame.draw.circle(self.image, color, (radius, radius), radius)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+    def set_coord(self, x, y):
+        self.rect.x = x
+        self.rect.y = y
 
 
 class View:
@@ -335,6 +420,8 @@ class View:
         self.food_sprite_group = None
 
         self.application_game = ApplicationTypingGame(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+
+        self.title_screen = TitleScreen(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
 
     def spin_results_to_icon_images(self, spin_results):
         icon_images = [0] * 3
@@ -460,3 +547,7 @@ class View:
 
         self.shelf_view.stock_order[food_sprite].reset_starting_pos()
         return False
+
+    def draw_title_screen(self):
+        self.screen.fill((255, 255, 255))
+        self.title_screen.draw(self.screen)
