@@ -283,19 +283,19 @@ class TitleScreen:
         title_font = pygame.font.Font('freesansbold.ttf', 115)
         title_x = screen_width // 2 - 350
         title_y = screen_height // 2 - 150
-        self.title = TextSprite(title_font, 'Meritocracy?', (0, 0, 0), (title_x, title_y))
+        self.title = TextSprite(title_font, 'Meritocracy?', (255, 0, 255), (title_x, title_y))
 
         button_font = pygame.font.Font('freesansbold.ttf', 30)
         b_w = 125
         b_h = 75
-        self.start_default_color = (0, 200, 0)
-        self.start_hover_color = (0, 255, 0)
+        self.start_default_color = (0, 0, 200)
+        self.start_hover_color = (0, 0, 255)
 
         start_b_x = screen_width // 2 - b_w // 2
         start_b_y = title_y + 150
-        start_txt_x = start_b_x + 27
+        start_txt_x = start_b_x + 15
         start_txt_y = start_b_y + 25
-        self.start_text = TextSprite(button_font, 'Start', (0, 0, 0), (start_txt_x, start_txt_y))
+        self.start_text = TextSprite(button_font, 'START', (255, 255, 255), (start_txt_x, start_txt_y))
         self.start_button = Button(start_b_x, start_b_y, b_w, b_h,
                                    self.start_hover_color, self.start_default_color, self.start_text)
 
@@ -304,9 +304,9 @@ class TitleScreen:
 
         quit_b_x = start_b_x
         quit_b_y = start_b_y + 100
-        quit_txt_x = quit_b_x + 30
+        quit_txt_x = quit_b_x + 25
         quit_txt_y = quit_b_y + 25
-        self.quit_text = TextSprite(button_font, 'Quit', (0, 0, 0), (quit_txt_x, quit_txt_y))
+        self.quit_text = TextSprite(button_font, 'QUIT', (255, 255, 255), (quit_txt_x, quit_txt_y))
         self.quit_button = Button(quit_b_x, quit_b_y, b_w, b_h,
                                   self.quit_hover_color, self.quit_default_color, self.quit_text)
 
@@ -364,6 +364,28 @@ class PlayerSprite(pygame.sprite.Sprite):
         self.rect.y = y
 
 
+class SlotMachineView:
+    def __init__(self, screen_width, screen_height):
+        font = pygame.font.SysFont('Comic Sans MS', 30)
+        text_color_black = (0, 0, 0)
+        instruction_pos = (455, 140)
+        self.instructions = TextSprite(font, 'Click the spin button to spin your destiny!', text_color_black,
+                                       instruction_pos)
+
+        text_color_white = (255, 255, 255)
+        button_default_color = (0, 0, 200)  # dark blue
+        button_hover_color = (0, 0, 255)  # blue
+        next_button_w = 125
+        next_button_h = 75
+        next_button_x = screen_width - next_button_w - 75
+        next_button_y = screen_height - next_button_h - 25
+        next_txt_x = next_button_x + 35
+        next_txt_y = next_button_y + 30
+        self.next_b_text = TextSprite(font, 'NEXT', text_color_white, (next_txt_x, next_txt_y))
+        self.next_button = Button(next_button_x, next_button_y, next_button_w, next_button_h,
+                                  button_default_color, button_hover_color, self.next_b_text)
+
+
 class View:
     BACKGROUND_IMAGE_NAME = 'background.png'
     GAME_TITLE = 'Slot Machine'
@@ -379,6 +401,7 @@ class View:
 
     PLAYER_COLOR = (0, 0, 255)  # Blue
     PLAYER_RADIUS = (BLOCK_SIZE * 3) // 2
+    WIN_SPRITE_COLOR = (255, 0, 0)  # Red
 
     def __init__(self, maze):
         """ Constructs view, setting up values for coordinates and colors"""
@@ -414,6 +437,8 @@ class View:
         self.maze_image = None
         self.player_sprite = None
         self.player_sprite_image = None
+        self.win_sprite = None
+        self.win_sprite_image = None
 
         self.shelf_view = None
         self.food_sprite_rects = None
@@ -422,6 +447,8 @@ class View:
         self.application_game = ApplicationTypingGame(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
 
         self.title_screen = TitleScreen(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+
+        self.slot_machine_view = SlotMachineView(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
 
     def spin_results_to_icon_images(self, spin_results):
         icon_images = [0] * 3
@@ -440,9 +467,11 @@ class View:
     def draw_maze_screen(self):
         self.screen.blit(self.maze_image, (0, 0))
         self.player_sprite_image.draw(self.screen)
+        self.win_sprite_image.draw(self.screen)
 
     def draw_maze(self, maze):
         """ Draws a maze with a maze object"""
+        self.screen.fill((0, 0, 0))
         self.draw_background()
 
         for y in range(maze.height):
@@ -463,8 +492,14 @@ class View:
                         self.draw_block(x * (self.PATH_WIDTH + 1) + self.PATH_WIDTH,
                                         y * (self.PATH_WIDTH + 1) + p)
 
-        pygame.display.update()
         self.maze_image = self.screen.copy()
+        # pygame.mixer.
+
+    def maze_coord_to_px(self, x, y):
+        px = self.OFFSET_X + self.BLOCK_SIZE * (self.PATH_WIDTH + 1) * y
+        py = self.OFFSET_Y + self.BLOCK_SIZE * (self.PATH_WIDTH + 1) * x
+
+        return px, py
 
     def draw_block(self, x, y):
         x_offset = self.MAZE_TOP_LEFT_CORNER[0] + self.BLOCK_SIZE
@@ -481,6 +516,11 @@ class View:
     def init_player(self, x, y):
         self.player_sprite = PlayerSprite(self.PLAYER_COLOR, self.MAZE_COLOR, x, y, self.PLAYER_RADIUS)
         self.player_sprite_image = pygame.sprite.RenderPlain(self.player_sprite)
+
+    def init_win_sprite(self, x_coord, y_coord):
+        px = self.maze_coord_to_px(x_coord, y_coord)
+        self.win_sprite = PlayerSprite(self.WIN_SPRITE_COLOR, self.MAZE_COLOR, px[0], px[1], self.PLAYER_RADIUS)
+        self.win_sprite_image = pygame.sprite.RenderPlain(self.win_sprite)
 
     def init_shelf_view(self, shelf_order, stock_order):
         self.shelf_view = ShelfGame(shelf_order, stock_order, self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
@@ -549,5 +589,5 @@ class View:
         return False
 
     def draw_title_screen(self):
-        self.screen.fill((255, 255, 255))
+        self.screen.fill((0, 0, 0))
         self.title_screen.draw(self.screen)

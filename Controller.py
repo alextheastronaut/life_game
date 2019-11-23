@@ -51,7 +51,10 @@ class Controller:
         for event in pygame.event.get():
             # Stop the loop when the user chooses to quit the game
             if event.type == pygame.QUIT:
-                pygame.quit()
+                return False
+            elif event.type == pygame.MOUSEMOTION:
+                next_button = self.view.slot_machine_view.next_button
+                next_button.selected = True if next_button.rect.collidepoint(event.pos) else False
             # When the user pushes the mouse button down, Check which sprites are involved
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # Check if spin button is clicked
@@ -66,9 +69,19 @@ class Controller:
                         # Set spinning to true to make sure the user can't click spin again while spinning
                         self.model.slot_machine.spinning = True
                         self.view.spin_snd.sound.play()
+                elif self.view.slot_machine_view.next_button.rect.collidepoint(event.pos):
+                    pygame.mixer.music.fadeout(1000)
+                    self.current_screen = Screen.Maze
+
+        # Fill the background black
+        self.view.screen.fill((0, 0, 0))
 
         # Display the background image
         self.view.screen.blit(self.view.slot_background.image, self.view.slot_background.pos)
+
+        # Display instructions on screen
+        self.view.screen.blit(self.view.slot_machine_view.instructions.text_surface,
+                              self.view.slot_machine_view.instructions.pos)
 
         # Update the action buttons and position them on the screen
         self.view.spin_button.update()
@@ -114,12 +127,17 @@ class Controller:
             # Display previous results if slot machine isn't spinning
             prev_results = self.model.slot_machine.prev_results
             self.display_slot_machine_icons(prev_results)
+            if not self.model.slot_machine.can_spin:
+                self.view.slot_machine_view.next_button.draw(self.view.screen)
+
+        return True
 
     def init_maze_game(self):
         self.view.draw_maze(self.model.maze)
         self.model.init_player(0, 0, self.view.OFFSET_X, self.view.OFFSET_Y)
         offset_coord = self.model.player.get_offset_px()
         self.view.init_player(offset_coord[0], offset_coord[1])
+        self.view.init_win_sprite(self.model.maze.win_sprite_coord[0], self.model.maze.win_sprite_coord[1])
 
     def play_maze_game(self):
         for event in pygame.event.get():
@@ -188,7 +206,7 @@ class Controller:
     def display_title_screen(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
+                return False
             elif event.type == pygame.MOUSEMOTION:
                 start_button = self.view.title_screen.start_button
                 quit_button = self.view.title_screen.quit_button
@@ -200,25 +218,33 @@ class Controller:
                 if start_button.rect.collidepoint(event.pos):
                     self.current_screen = Screen.Slot
                 elif quit_button.rect.collidepoint(event.pos):
-                    pygame.quit()
+                    return False
 
         self.view.draw_title_screen()
+
+        return True
 
     def start_game(self):
         # self.init_slot_machine()
         # self.init_maze_game()
         # self.init_shelf_game()
         slot_machine_init = False
+        maze_init = False
 
         continue_playing = True
         while continue_playing:
             if self.current_screen is Screen.Title:
-                self.display_title_screen()
+                continue_playing = self.display_title_screen()
             elif self.current_screen is Screen.Slot:
                 if not slot_machine_init:
                     self.init_slot_machine()
                     slot_machine_init = True
-                self.play_slot_machine()
+                continue_playing = self.play_slot_machine()
+            elif self.current_screen is Screen.Maze:
+                if not maze_init:
+                    self.init_maze_game()
+                    maze_init = True
+                continue_playing = self.play_maze_game()
         # continue_playing = self.play_slot_machine()
         # continue_playing = self.play_maze_game()
         # continue_playing = self.play_shelf_game()

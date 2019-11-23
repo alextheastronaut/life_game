@@ -55,15 +55,45 @@ class Maze:
     def __init__(self, height, width):
         self.height = height
         self.width = width
+        self.max_distance = 0
 
         random.seed()
         self.Maze = self.generate_maze()
+        self.win_sprite_coord = self.find_farthest_cell_from_start()
+        print(self.win_sprite_coord)
 
     def generate_maze(self):
         maze = [[Cell() for j in range(self.width)] for i in range(self.height)]
         self.generate_rand_maze(0, 0, maze)
 
         return maze
+
+    def find_farthest_cell_from_start(self):
+        for x in range(self.height):
+            for y in range(self.width):
+                self.Maze[x][y].visited = False
+
+        queue = list()
+        queue.append((0, 0))
+        curr_coord = None
+
+        while len(queue) > 0:
+            curr_coord = queue.pop(0)
+            x = curr_coord[0]
+            y = curr_coord[1]
+            curr = self.Maze[x][y]
+            curr.visited = True
+            for direction in self.DIRECTIONS:
+                if curr.open_walls & direction.value is not 0:
+                    print(direction)
+                    n_x = x + self.NEIGHBORS[direction][0]
+                    n_y = y + self.NEIGHBORS[direction][1]
+                    print(n_x, n_y)
+
+                    if self.__within_bounds(n_x, n_y) and not self.Maze[n_x][n_y].visited:
+                        queue.append((n_x, n_y))
+
+        return curr_coord
 
     def generate_rand_maze(self, i, j, maze):
         if self.__within_bounds(i, j) and not maze[i][j].visited:
@@ -198,4 +228,3 @@ class Model:
                 return x_p1 + dir_coord[0] == x_p2 and y_p1 + dir_coord[1] == y_p2
             else:
                 return x_p2 + dir_coord[0] == x_p1 and y_p2 + dir_coord[1] == y_p1
-
