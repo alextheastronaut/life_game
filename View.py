@@ -493,7 +493,9 @@ class View:
                                         y * (self.PATH_WIDTH + 1) + p)
 
         self.maze_image = self.screen.copy()
-        # pygame.mixer.
+        pygame.mixer.music.unload()
+        pygame.mixer.music.load('sounds/maze_music.ogg')
+        pygame.mixer.music.play(loops=-1, start=50.0)
 
     def maze_coord_to_px(self, x, y):
         px = self.OFFSET_X + self.BLOCK_SIZE * (self.PATH_WIDTH + 1) * y
