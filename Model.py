@@ -14,7 +14,7 @@ class SlotMachine:
     def spin(self):
         random.seed()
         # Chance to be woman, black, and in poverty, respectively.
-        chance = [50, 17, 20]
+        chance = [50, 17, 15]
 
         # For each reel, choose between two outcomes based on the chance.
         for reel in range(3):

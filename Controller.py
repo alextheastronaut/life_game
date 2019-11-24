@@ -18,6 +18,7 @@ class Screen(Enum):
 
 class Controller:
     FRAME_RATE = 30
+    TIME_UNTIL_RESTOCK = 15
 
     def __init__(self):
         self.model = Model()
@@ -25,6 +26,11 @@ class Controller:
         self.clock = pygame.time.Clock()
         self.clock.tick(self.FRAME_RATE)
         self.start_time = 0
+        self.finish_time = 0
+        self.time_since_last_restock = 0
+        self.job_app_finish_time = 0
+
+        self.job_app_filled = False
 
         self.slot_machine_init = False
         self.maze_init = False
@@ -157,6 +163,8 @@ class Controller:
         self.view.init_player(offset_coord[0], offset_coord[1])
         self.view.init_win_sprite(self.model.maze.win_sprite_coord[0], self.model.maze.win_sprite_coord[1])
 
+        self.start_time = time.time()
+
     def play_maze_game(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -179,11 +187,21 @@ class Controller:
 
         if self.model.player_won:
             self.current_screen = Screen.Win
+            self.finish_time = time.time() - self.start_time
+
+        # If 5 seconds have passed and player is poverty, play job app game.
+        # and not self.model.slot_machine.results[2]
+        if time.time() - self.start_time > 5:
+            if not self.job_app_filled:
+                self.current_screen = Screen.Application
+                self.job_app_finish_time = time.time()
+                self.job_app_filled = True
 
         offset_coord = self.model.player.get_offset_px()
         self.view.player_sprite.set_coord(offset_coord[0], offset_coord[1])
 
-        self.view.draw_maze_screen()
+        maze_time = time.time() - self.start_time
+        self.view.draw_maze_screen(maze_time)
 
         return True
 
@@ -221,7 +239,13 @@ class Controller:
         return True
 
     def play_application_game(self):
-        self.view.draw_application_game()
+        maze_time = time.time() - self.start_time
+        self.view.draw_application_game(maze_time)
+
+        if self.view.application_game.won:
+            self.current_screen = Screen.Maze
+            return True
+
         return self.view.application_game.handle_event()
 
     def display_title_screen(self):
@@ -262,7 +286,7 @@ class Controller:
                 elif quit_button.rect.collidepoint(event.pos):
                     return False
 
-        self.view.draw_win_screen()
+        self.view.draw_win_screen(self.finish_time)
 
         return True
 
@@ -284,6 +308,9 @@ class Controller:
                 continue_playing = self.play_maze_game()
             elif self.current_screen is Screen.Win:
                 continue_playing = self.display_win_screen()
+            elif self.current_screen is Screen.Application:
+                continue_playing = self.play_application_game()
+
         # continue_playing = self.play_slot_machine()
         # continue_playing = self.play_maze_game()
         # continue_playing = self.play_shelf_game()

@@ -149,12 +149,12 @@ class Sound:
 class ApplicationTypingGame:
     def __init__(self, screen_width, screen_height):
         self.background = BackgroundSprite('application_form.jpg', screen_width, screen_height)
-        self.first_name = 'Alex'
-        self.middle_name = 'Lei'
-        self.last_name = 'Chen'
-        self.address = '6560 Canyon Cove Drive'
-        self.city_street_zip = 'Salt Lake City, Utah, 84121'
-        self.number = '385-212-0289'
+        self.first_name = 'Elon'
+        self.middle_name = 'The'
+        self.last_name = 'Musk'
+        self.address = '3500 Deer Creek Road'
+        self.city_street_zip = 'Palo Alto, California, 94304'
+        self.number = '650-681-5000'
         self.eligible = 'X'
 
         self.font = pygame.font.SysFont('Comic Sans MS', 30)
@@ -178,7 +178,24 @@ class ApplicationTypingGame:
         self.current_word_idx = 0
         self.input_box = self.init_input_box(screen_width, screen_height)
 
+        instructions_1_x = self.input_box.rect.x
+        instructions_1_y = self.input_box.rect.y - 100
+        self.instructions_1 = TextSprite(self.font, 'Type the word highlighted in RED', (0, 0, 0),
+                                         (instructions_1_x, instructions_1_y))
+
+        instructions_2_x = instructions_1_x
+        instructions_2_y = instructions_1_y + 30
+        self.instructions_2 = TextSprite(self.font, 'and press enter to move onto', (0, 0, 0),
+                                         (instructions_2_x, instructions_2_y))
+
+        instructions_3_x = instructions_2_x
+        instructions_3_y = instructions_2_y + 30
+        self.instructions_3 = TextSprite(self.font, 'the next word.', (0, 0, 0),
+                                         (instructions_3_x, instructions_3_y))
+
         self.text_surface_list[0].emphasize_and_change_color(self.emph_color)
+
+        self.won = False
 
     def init_input_box(self, screen_width, screen_height):
         right_of_form_px = self.background.rect.x + self.background.image.get_size()[0]
@@ -195,6 +212,9 @@ class ApplicationTypingGame:
         for text in self.text_surface_list:
             screen.blit(text.text_surface, text.pos)
         self.input_box.draw(screen)
+        screen.blit(self.instructions_1.text_surface, self.instructions_1.pos)
+        screen.blit(self.instructions_2.text_surface, self.instructions_2.pos)
+        screen.blit(self.instructions_3.text_surface, self.instructions_3.pos)
 
     def set_name_texts(self, text_color):
         name_offset = 45
@@ -241,13 +261,18 @@ class ApplicationTypingGame:
                         current_surface.reset_and_change_color(self.typed_color)
 
                         self.current_word_idx += 1
-                        next_surface = self.text_surface_list[self.current_word_idx]
-                        next_surface.emphasize_and_change_color(self.emph_color)
 
+                        if self.current_word_idx < len(self.text_surface_list):
+                            next_surface = self.text_surface_list[self.current_word_idx]
+                            next_surface.emphasize_and_change_color(self.emph_color)
                 elif event.key == pygame.K_BACKSPACE:
                     self.input_box.text = self.input_box.text[:-1]
                 else:
                     self.input_box.text += event.unicode
+
+        if self.current_word_idx == len(self.text_surface_list):
+            print('WON')
+            self.won = True
 
         return True
 
@@ -324,14 +349,14 @@ class WinScreen:
         self.title = TextSprite(title_font, 'You did it!', (255, 255, 255), (title_x, title_y))
 
         button_font = pygame.font.Font('freesansbold.ttf', 30)
-        b_w = 300
+        b_w = 350
         b_h = 75
         self.start_default_color = (0, 0, 200)
         self.start_hover_color = (0, 0, 255)
 
         home_b_x = screen_width // 2 - b_w // 2
-        home_b_y = title_y + 150
-        home_txt_x = home_b_x + 10
+        home_b_y = title_y + 250
+        home_txt_x = home_b_x + 20
         home_txt_y = home_b_y + 25
         self.home_text = TextSprite(button_font, 'Back to home screen', (255, 255, 255), (home_txt_x, home_txt_y))
         self.home_button = Button(home_b_x, home_b_y, b_w, b_h,
@@ -342,7 +367,7 @@ class WinScreen:
 
         quit_b_x = home_b_x
         quit_b_y = home_b_y + 100
-        quit_txt_x = quit_b_x + 115
+        quit_txt_x = quit_b_x + 135
         quit_txt_y = quit_b_y + 25
         self.quit_text = TextSprite(button_font, 'QUIT', (255, 255, 255), (quit_txt_x, quit_txt_y))
         self.quit_button = Button(quit_b_x, quit_b_y, b_w, b_h,
@@ -442,6 +467,9 @@ class View:
     PLAYER_RADIUS = (BLOCK_SIZE * 3) // 2
     WIN_SPRITE_COLOR = (255, 0, 0)  # Red
 
+    TOP_RIGHT_TIME_PX = SCREEN_WIDTH - 175
+    TOP_RIGHT_TIME_PY = 50
+
     def __init__(self, maze):
         """ Constructs view, setting up values for coordinates and colors"""
         pygame.init()
@@ -505,10 +533,12 @@ class View:
                 [Icon('black_hand.jpg'), Icon('white_hand.jpg')],
                 [Icon('food_stamp.jpg'), Icon('money.jpg')]]
 
-    def draw_maze_screen(self):
+    def draw_maze_screen(self, time):
         self.screen.blit(self.maze_image, (0, 0))
         self.player_sprite_image.draw(self.screen)
         self.win_sprite_image.draw(self.screen)
+
+        self.draw_time_text(self.TOP_RIGHT_TIME_PX, self.TOP_RIGHT_TIME_PY, time)
 
     def draw_maze(self, maze):
         """ Draws a maze with a maze object"""
@@ -571,9 +601,11 @@ class View:
 
     # def init_application_view(self):
     #     self.application_game = ApplicationTypingGame(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
-    def draw_application_game(self):
+    def draw_application_game(self, time):
         self.screen.fill((255, 255, 255))
         self.application_game.draw(self.screen)
+        self.draw_time_text(self.TOP_RIGHT_TIME_PX, self.TOP_RIGHT_TIME_PY, time)
+
 
     def draw_shelf(self):
         self.screen.fill((255, 255, 255))
@@ -635,6 +667,20 @@ class View:
         self.screen.fill((0, 0, 0))
         self.title_screen.draw(self.screen)
 
-    def draw_win_screen(self):
+    def draw_win_screen(self, time):
         self.screen.fill((0, 0, 0))
         self.win_screen.draw(self.screen)
+
+        title_pos = self.win_screen.title.pos
+        self.draw_time_text(title_pos[0] + 155, title_pos[1] + 150, time, font_size=65, offset_x=125, offset_y=15)
+
+    def draw_time_text(self, x, y, time, font_size=30, offset_x=65, offset_y=7):
+        description_font = pygame.font.SysFont('Comic Sans MS', font_size)
+        description = TextSprite(description_font, 'TIME:', (255, 0, 0), (x, y))
+
+        time_font = pygame.font.Font("fonts/DS-DIGIT.TTF", font_size)
+        time = str(round(time, 3))
+        time_text = TextSprite(time_font, time, (255, 0, 0), (x + offset_x, y - offset_y))
+
+        self.screen.blit(description.text_surface, description.pos)
+        self.screen.blit(time_text.text_surface, time_text.pos)
