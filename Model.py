@@ -59,7 +59,8 @@ class Maze:
 
         random.seed()
         self.Maze = self.generate_maze()
-        self.win_sprite_coord = self.find_farthest_cell_from_start()
+        self.win_sprite_coord = (0, 1)
+        #self.win_sprite_coord = self.find_farthest_cell_from_start()
         print(self.win_sprite_coord)
 
     def generate_maze(self):
@@ -85,10 +86,8 @@ class Maze:
             curr.visited = True
             for direction in self.DIRECTIONS:
                 if curr.open_walls & direction.value is not 0:
-                    print(direction)
                     n_x = x + self.NEIGHBORS[direction][0]
                     n_y = y + self.NEIGHBORS[direction][1]
-                    print(n_x, n_y)
 
                     if self.__within_bounds(n_x, n_y) and not self.Maze[n_x][n_y].visited:
                         queue.append((n_x, n_y))
@@ -184,6 +183,7 @@ class Model:
         self.maze = Maze(15, 20)
         self.player = None
         self.shelf_game = RestockShelfGame()
+        self.player_won = False
 
     def init_player(self, x, y, offset_x, offset_y):
         self.player = Player(x, y, offset_x, offset_y)
@@ -214,6 +214,8 @@ class Model:
         # 2d array of cells
         maze = self.maze.Maze
 
+        if self.__player_won(x_p1, x_p2, y_p1, y_p2):
+            self.player_won = True
         # if direction is Direction.UP:
         # If the sprite is in the cell
         if x_p1 == x_p2 and y_p1 == y_p2:
@@ -228,3 +230,10 @@ class Model:
                 return x_p1 + dir_coord[0] == x_p2 and y_p1 + dir_coord[1] == y_p2
             else:
                 return x_p2 + dir_coord[0] == x_p1 and y_p2 + dir_coord[1] == y_p1
+
+    def __player_won(self, x_1, x_2, y_1, y_2):
+        win_x = self.maze.win_sprite_coord[0]
+        win_y = self.maze.win_sprite_coord[1]
+        if x_1 == win_x and y_1 == win_y and x_2 == win_x and y_2 == win_y:
+            return True
+

@@ -13,6 +13,7 @@ class Screen(Enum):
     Maze = 3
     Restock = 4
     Application = 5
+    Win = 6
 
 
 class Controller:
@@ -25,11 +26,28 @@ class Controller:
         self.clock.tick(self.FRAME_RATE)
         self.start_time = 0
 
+        self.slot_machine_init = False
+        self.maze_init = False
+        self.init_shelf_game()
+
         self.selected_food_sprite = None
         self.selected_offset_x = None
         self.selected_offset_y = None
 
         self.current_screen = Screen.Title
+
+    # def reset(self):
+    #     self.model = Model()
+    #     self.view = View(self.model.maze)
+    #     self.clock = pygame.time.Clock()
+    #     self.clock.tick(self.FRAME_RATE)
+    #     self.start_time = 0
+    #
+    #     self.selected_food_sprite = None
+    #     self.selected_offset_x = None
+    #     self.selected_offset_y = None
+    #
+    #     self.current_screen = Screen.Title
 
     def display_slot_machine_icons(self, results_to_display):
         """Displays previously rolled icons in slot machine"""
@@ -159,6 +177,9 @@ class Controller:
             self.model.move_player(Direction.RIGHT, self.view.BLOCK_SIZE,
                                    self.view.PLAYER_RADIUS)
 
+        if self.model.player_won:
+            self.current_screen = Screen.Win
+
         offset_coord = self.model.player.get_offset_px()
         self.view.player_sprite.set_coord(offset_coord[0], offset_coord[1])
 
@@ -224,27 +245,45 @@ class Controller:
 
         return True
 
-    def start_game(self):
-        # self.init_slot_machine()
-        # self.init_maze_game()
-        # self.init_shelf_game()
-        slot_machine_init = False
-        maze_init = False
+    def display_win_screen(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            elif event.type == pygame.MOUSEMOTION:
+                home_button = self.view.win_screen.home_button
+                quit_button = self.view.win_screen.quit_button
+                home_button.selected = home_button.rect.collidepoint(event.pos)
+                quit_button.selected = quit_button.rect.collidepoint(event.pos)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                home_button = self.view.win_screen.home_button
+                quit_button = self.view.win_screen.quit_button
+                if home_button.rect.collidepoint(event.pos):
+                    self.__init__()
+                elif quit_button.rect.collidepoint(event.pos):
+                    return False
 
+        self.view.draw_win_screen()
+
+        return True
+
+    def start_game(self):
         continue_playing = True
+
         while continue_playing:
             if self.current_screen is Screen.Title:
                 continue_playing = self.display_title_screen()
             elif self.current_screen is Screen.Slot:
-                if not slot_machine_init:
+                if not self.slot_machine_init:
                     self.init_slot_machine()
-                    slot_machine_init = True
+                    self.slot_machine_init = True
                 continue_playing = self.play_slot_machine()
             elif self.current_screen is Screen.Maze:
-                if not maze_init:
+                if not self.maze_init:
                     self.init_maze_game()
-                    maze_init = True
+                    self.maze_init = True
                 continue_playing = self.play_maze_game()
+            elif self.current_screen is Screen.Win:
+                continue_playing = self.display_win_screen()
         # continue_playing = self.play_slot_machine()
         # continue_playing = self.play_maze_game()
         # continue_playing = self.play_shelf_game()
@@ -252,6 +291,7 @@ class Controller:
 
             # Refresh the display
             pygame.display.flip()
+
 
 # Calls the main function
 if __name__ == "__main__":

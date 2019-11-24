@@ -315,6 +315,45 @@ class TitleScreen:
         self.start_button.draw(screen)
         self.quit_button.draw(screen)
 
+
+class WinScreen:
+    def __init__(self, screen_width, screen_height):
+        title_font = pygame.font.Font('freesansbold.ttf', 115)
+        title_x = screen_width // 2 - 275
+        title_y = screen_height // 2 - 150
+        self.title = TextSprite(title_font, 'You did it!', (255, 255, 255), (title_x, title_y))
+
+        button_font = pygame.font.Font('freesansbold.ttf', 30)
+        b_w = 300
+        b_h = 75
+        self.start_default_color = (0, 0, 200)
+        self.start_hover_color = (0, 0, 255)
+
+        home_b_x = screen_width // 2 - b_w // 2
+        home_b_y = title_y + 150
+        home_txt_x = home_b_x + 10
+        home_txt_y = home_b_y + 25
+        self.home_text = TextSprite(button_font, 'Back to home screen', (255, 255, 255), (home_txt_x, home_txt_y))
+        self.home_button = Button(home_b_x, home_b_y, b_w, b_h,
+                                  self.start_hover_color, self.start_default_color, self.home_text)
+
+        self.quit_hover_color = (255, 0, 0)
+        self.quit_default_color = (200, 0, 0)
+
+        quit_b_x = home_b_x
+        quit_b_y = home_b_y + 100
+        quit_txt_x = quit_b_x + 115
+        quit_txt_y = quit_b_y + 25
+        self.quit_text = TextSprite(button_font, 'QUIT', (255, 255, 255), (quit_txt_x, quit_txt_y))
+        self.quit_button = Button(quit_b_x, quit_b_y, b_w, b_h,
+                                  self.quit_hover_color, self.quit_default_color, self.quit_text)
+
+    def draw(self, screen):
+        screen.blit(self.title.text_surface, self.title.pos)
+        self.home_button.draw(screen)
+        self.quit_button.draw(screen)
+
+
 class Button(pygame.sprite.Sprite):
     def __init__(self, x, y, b_w, b_h, hover_color, default_color, text_sprite):
         super().__init__()
@@ -450,6 +489,8 @@ class View:
 
         self.slot_machine_view = SlotMachineView(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
 
+        self.win_screen = WinScreen(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+
     def spin_results_to_icon_images(self, spin_results):
         icon_images = [0] * 3
         for reel in range(3):
@@ -495,7 +536,7 @@ class View:
         self.maze_image = self.screen.copy()
         pygame.mixer.music.unload()
         pygame.mixer.music.load('sounds/maze_music.ogg')
-        pygame.mixer.music.play(loops=-1, start=50.0)
+        pygame.mixer.music.play(loops=-1, start=30)
 
     def maze_coord_to_px(self, x, y):
         px = self.OFFSET_X + self.BLOCK_SIZE * (self.PATH_WIDTH + 1) * y
@@ -593,3 +634,7 @@ class View:
     def draw_title_screen(self):
         self.screen.fill((0, 0, 0))
         self.title_screen.draw(self.screen)
+
+    def draw_win_screen(self):
+        self.screen.fill((0, 0, 0))
+        self.win_screen.draw(self.screen)
