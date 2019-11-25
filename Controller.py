@@ -30,6 +30,8 @@ class Controller:
         self.time_since_last_restock = 0
         self.job_app_finish_time = 0
 
+        self.shelf_game_init = False
+
         self.job_app_filled = False
 
         self.slot_machine_init = False
@@ -194,8 +196,10 @@ class Controller:
         if time.time() - self.start_time > 5:
             if not self.job_app_filled:
                 self.current_screen = Screen.Application
-                self.job_app_finish_time = time.time()
-                self.job_app_filled = True
+
+        if self.job_app_filled:
+            if time.time() - self.time_since_last_restock > 5:
+                self.current_screen = Screen.Restock
 
         offset_coord = self.model.player.get_offset_px()
         self.view.player_sprite.set_coord(offset_coord[0], offset_coord[1])
@@ -207,6 +211,7 @@ class Controller:
 
     def init_shelf_game(self):
         shelf_game = self.model.shelf_game
+        shelf_game.reshuffle_items()
         self.view.init_shelf_view(shelf_game.shelf_order, shelf_game.stock_order)
 
     def play_shelf_game(self):
@@ -223,7 +228,8 @@ class Controller:
                         self.selected_offset_y = food_sprite.rect.y - event.pos[1]
             elif event.type == pygame.MOUSEBUTTONUP:
                 if self.selected_food_sprite is not None:
-                    self.view.can_place_item(self.selected_food_sprite, event.pos)
+                    if self.view.can_place_item(self.selected_food_sprite, event.pos):
+                        self.view.shelf_view.progress |= 1 << self.selected_food_sprite
                     self.selected_food_sprite = None
             elif event.type == pygame.MOUSEMOTION:
                 if self.selected_food_sprite is not None:
@@ -233,6 +239,11 @@ class Controller:
                     new_py = event.pos[1] + self.selected_offset_y
 
                     stock_sprites[self.selected_food_sprite].update_pos(new_px, new_py)
+
+        if self.view.shelf_view.won():
+            self.current_screen = Screen.Maze
+            self.time_since_last_restock = time.time()
+            self.shelf_game_init = False
 
         self.view.draw_shelf()
 
@@ -244,6 +255,9 @@ class Controller:
 
         if self.view.application_game.won:
             self.current_screen = Screen.Maze
+            self.job_app_finish_time = time.time()
+            self.time_since_last_restock = time.time()
+            self.job_app_filled = True
             return True
 
         return self.view.application_game.handle_event()
@@ -310,6 +324,11 @@ class Controller:
                 continue_playing = self.display_win_screen()
             elif self.current_screen is Screen.Application:
                 continue_playing = self.play_application_game()
+            elif self.current_screen is Screen.Restock:
+                if not self.shelf_game_init:
+                    self.init_shelf_game()
+                    self.shelf_game_init = True
+                continue_playing = self.play_shelf_game()
 
         # continue_playing = self.play_slot_machine()
         # continue_playing = self.play_maze_game()

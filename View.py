@@ -107,6 +107,9 @@ class ShelfGame:
         self.shelf_order_text = self.set_shelf_order_text(shelf_order)
         self.shelf_order_sprite_pos = self.set_shelf_order_sprite_pos()
 
+        self.progress = 0
+        self.all_restocked = (1 << len(shelf_order)) - 1
+
     def set_opening_rects(self):
         opening_rects = []
 
@@ -138,6 +141,14 @@ class ShelfGame:
             shelf_order_sprite_pos.append((sprite_pos_x, sprite_pos_y))
 
         return shelf_order_sprite_pos
+
+    def won(self):
+        return self.progress == self.all_restocked
+
+    def reset(self):
+        self.progress = 0
+        for food_sprite in self.stock_order:
+            food_sprite.reset_starting_pos()
 
 
 class Sound:
@@ -195,6 +206,15 @@ class ApplicationTypingGame:
 
         self.text_surface_list[0].emphasize_and_change_color(self.emph_color)
 
+        next_button_w = 300
+        next_button_h = 50
+        next_button_x = screen_width - next_button_w - 25
+        next_button_y = screen_height - next_button_h - 25
+        skip_text = TextSprite(self.font, "Or use a family connection", (255, 255, 255),
+                               (next_button_x + 17, next_button_y + 15))
+        self.skip_button = Button(next_button_x, next_button_y, next_button_w, next_button_h, (0, 0, 255), (0, 0, 200),
+                                  skip_text)
+
         self.won = False
 
     def init_input_box(self, screen_width, screen_height):
@@ -215,6 +235,7 @@ class ApplicationTypingGame:
         screen.blit(self.instructions_1.text_surface, self.instructions_1.pos)
         screen.blit(self.instructions_2.text_surface, self.instructions_2.pos)
         screen.blit(self.instructions_3.text_surface, self.instructions_3.pos)
+        self.skip_button.draw(screen)
 
     def set_name_texts(self, text_color):
         name_offset = 45
@@ -253,6 +274,11 @@ class ApplicationTypingGame:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
+            elif event.type == pygame.MOUSEMOTION:
+                self.skip_button.selected = self.skip_button.rect.collidepoint(event.pos)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if self.skip_button.rect.collidepoint(event.pos):
+                    self.won = True
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     current_surface = self.text_surface_list[self.current_word_idx]
@@ -271,7 +297,6 @@ class ApplicationTypingGame:
                     self.input_box.text += event.unicode
 
         if self.current_word_idx == len(self.text_surface_list):
-            print('WON')
             self.won = True
 
         return True
@@ -605,7 +630,6 @@ class View:
         self.screen.fill((255, 255, 255))
         self.application_game.draw(self.screen)
         self.draw_time_text(self.TOP_RIGHT_TIME_PX, self.TOP_RIGHT_TIME_PY, time)
-
 
     def draw_shelf(self):
         self.screen.fill((255, 255, 255))

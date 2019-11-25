@@ -151,13 +151,15 @@ class RestockShelfGame:
     ITEMS = ['condiments', 'steak', 'sushi', 'taco', 'watermelon']
 
     def __init__(self):
+        self.shelf_order = None
+        self.stock_order = None
+        self.reshuffle_items()
+
+    def reshuffle_items(self):
         random.shuffle(self.ITEMS)
         self.shelf_order = self.ITEMS.copy()
         random.shuffle(self.ITEMS)
         self.stock_order = self.ITEMS.copy()
-
-    def reshuffle_items(self):
-        self.__init__()
 
 
 class Player:
