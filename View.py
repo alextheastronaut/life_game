@@ -107,6 +107,11 @@ class ShelfGame:
         self.shelf_order_text = self.set_shelf_order_text(shelf_order)
         self.shelf_order_sprite_pos = self.set_shelf_order_sprite_pos()
 
+        instructions_x = screen_width // 2 - 250
+        instructions_y = screen_height - 85
+        self.instructions = TextSprite(self.font, 'Click and drag each item to its corresponding box.', (0, 0, 0),
+                                       (instructions_x, instructions_y))
+
         self.progress = 0
         self.all_restocked = (1 << len(shelf_order)) - 1
 
@@ -631,7 +636,7 @@ class View:
         self.application_game.draw(self.screen)
         self.draw_time_text(self.TOP_RIGHT_TIME_PX, self.TOP_RIGHT_TIME_PY, time)
 
-    def draw_shelf(self):
+    def draw_shelf(self, time):
         self.screen.fill((255, 255, 255))
         shelf_sprite = self.shelf_view.shelf_sprite
         self.screen.blit(shelf_sprite.image, shelf_sprite.rect)
@@ -641,6 +646,8 @@ class View:
         for text_sprite in self.shelf_view.shelf_order_text:
             self.screen.blit(text_sprite.text_surface, text_sprite.pos)
 
+        self.draw_time_text(self.TOP_RIGHT_TIME_PX, self.TOP_RIGHT_TIME_PY, time)
+        self.screen.blit(self.shelf_view.instructions.text_surface, self.shelf_view.instructions.pos)
         pygame.display.update(shelf_sprite.rect)
         pygame.display.update(self.food_sprite_rects)
         pygame.sprite.RenderUpdates(self.food_sprite_group)

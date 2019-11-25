@@ -14,7 +14,7 @@ class SlotMachine:
     def spin(self):
         random.seed()
         # Chance to be woman, black, and in poverty, respectively.
-        chance = [50, 17, 15]
+        chance = [50, 25, 15]
 
         # For each reel, choose between two outcomes based on the chance.
         for reel in range(3):
@@ -59,9 +59,8 @@ class Maze:
 
         random.seed()
         self.Maze = self.generate_maze()
-        self.win_sprite_coord = (0, 1)
-        #self.win_sprite_coord = self.find_farthest_cell_from_start()
-        print(self.win_sprite_coord)
+        # self.win_sprite_coord = (0, 1)
+        self.win_sprite_coord = self.find_farthest_cell_from_start()
 
     def generate_maze(self):
         maze = [[Cell() for j in range(self.width)] for i in range(self.height)]
@@ -170,6 +169,11 @@ class Player:
         self.start_py = self.py = py
         self.offset_x = offset_x
         self.offset_y = offset_y
+        self.old_px = self.old_py = None
+        self.x = 0
+        self.y = 0
+
+        self.tiles_moved_since_reset = 0
 
     def reset(self):
         self.px = self.start_px
@@ -178,14 +182,31 @@ class Player:
     def get_offset_px(self):
         return self.px + self.offset_x, self.py + self.offset_y
 
+    def store_curr_pos_as_old_pos(self):
+        self.old_px = self.px
+        self.old_py = self.py
+
+    def set_curr_pos_to_old_pos(self):
+        self.px = self.old_px
+        self.py = self.old_py
+        self.tiles_moved_since_reset = 0
+
+    def update_coord(self, x, y):
+        self.x = x
+        self.y = y
+        self.tiles_moved_since_reset += 1
 
 class Model:
+    TILES_MOVED_TO_RESET = 80
+    TILES_TO_MOVE_BACK = 7
+
     def __init__(self):
         self.slot_machine = SlotMachine()
-        self.maze = Maze(15, 20)
+        self.maze = Maze(14, 30)
         self.player = None
         self.shelf_game = RestockShelfGame()
         self.player_won = False
+        self.prepped = False
 
     def init_player(self, x, y, offset_x, offset_y):
         self.player = Player(x, y, offset_x, offset_y)
@@ -213,6 +234,12 @@ class Model:
         x_p2 = p2[1] // square
         y_p2 = p2[0] // square
 
+        self.__update_player_coord(x_p1, x_p2, y_p1, y_p2)
+        if self.should_prep_for_reset() and not self.prepped:
+            self.player.store_curr_pos_as_old_pos()
+            self.prepped = True
+        print(self.player.tiles_moved_since_reset)
+
         # 2d array of cells
         maze = self.maze.Maze
 
@@ -238,4 +265,21 @@ class Model:
         win_y = self.maze.win_sprite_coord[1]
         if x_1 == win_x and y_1 == win_y and x_2 == win_x and y_2 == win_y:
             return True
+
+    def __update_player_coord(self, x_1, x_2, y_1, y_2):
+        if self.player.x != x_1 or self.player.y != y_1:
+            self.player.update_coord(x_1, y_1)
+        # elif self.player.x != x_2 or self.player.y != y_2:
+        #     self.player.update_coord(x_2, y_2)
+
+    def should_prep_for_reset(self):
+        return self.TILES_MOVED_TO_RESET <= self.player.tiles_moved_since_reset
+
+    def should_reset(self):
+        return self.TILES_MOVED_TO_RESET + self.TILES_TO_MOVE_BACK <= self.player.tiles_moved_since_reset
+
+    def reset_player(self):
+        self.player.set_curr_pos_to_old_pos()
+        self.prepped = False
+
 

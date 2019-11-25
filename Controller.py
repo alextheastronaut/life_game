@@ -44,18 +44,9 @@ class Controller:
 
         self.current_screen = Screen.Title
 
-    # def reset(self):
-    #     self.model = Model()
-    #     self.view = View(self.model.maze)
-    #     self.clock = pygame.time.Clock()
-    #     self.clock.tick(self.FRAME_RATE)
-    #     self.start_time = 0
-    #
-    #     self.selected_food_sprite = None
-    #     self.selected_offset_x = None
-    #     self.selected_offset_y = None
-    #
-    #     self.current_screen = Screen.Title
+        self.old_pos_set = False
+        self.pos_reset = False
+        self.time_since_reset = time.time()
 
     def display_slot_machine_icons(self, results_to_display):
         """Displays previously rolled icons in slot machine"""
@@ -198,8 +189,24 @@ class Controller:
                 self.current_screen = Screen.Application
 
         if self.job_app_filled:
-            if time.time() - self.time_since_last_restock > 5:
-                self.current_screen = Screen.Restock
+            results = self.model.slot_machine.results
+
+            # If in poverty
+            if not results[2]:
+                if time.time() - self.time_since_last_restock > 7:
+                    self.current_screen = Screen.Restock
+            # If girl
+            if not results[0]:
+                if time.time() - self.time_since_last_restock > 3:
+                    if self.model.should_reset():
+                        self.model.reset_player()
+                # if not self.old_pos_set and self.model.should_prep_for_reset():
+                #     self.model.player.store_curr_pos_as_old_pos()
+                #     self.old_pos_set = True
+            # If just girl
+            elif not results[0]:
+                if self.model.should_reset():
+                    self.model.reset_player()
 
         offset_coord = self.model.player.get_offset_px()
         self.view.player_sprite.set_coord(offset_coord[0], offset_coord[1])
@@ -245,7 +252,8 @@ class Controller:
             self.time_since_last_restock = time.time()
             self.shelf_game_init = False
 
-        self.view.draw_shelf()
+        maze_time = time.time() - self.start_time
+        self.view.draw_shelf(maze_time)
 
         return True
 
@@ -314,6 +322,7 @@ class Controller:
                 if not self.slot_machine_init:
                     self.init_slot_machine()
                     self.slot_machine_init = True
+                    self.time_since_reset = time.time()
                 continue_playing = self.play_slot_machine()
             elif self.current_screen is Screen.Maze:
                 if not self.maze_init:
@@ -330,10 +339,10 @@ class Controller:
                     self.shelf_game_init = True
                 continue_playing = self.play_shelf_game()
 
-        # continue_playing = self.play_slot_machine()
-        # continue_playing = self.play_maze_game()
-        # continue_playing = self.play_shelf_game()
-        # continue_playing = self.play_application_game()
+            # continue_playing = self.play_slot_machine()
+            # continue_playing = self.play_maze_game()
+            # continue_playing = self.play_shelf_game()
+            # continue_playing = self.play_application_game()
 
             # Refresh the display
             pygame.display.flip()
