@@ -694,14 +694,12 @@ class View:
             self.food_sprite_group = pygame.sprite.Group(self.shelf_view.stock_order)
 
     def can_place_item(self, food_sprite, mouse_pos):
-        print(self.shelf_view.opening_rects[1][0], self.shelf_view.opening_rects[1][1])
         for i, opening_rect in enumerate(self.shelf_view.opening_rects):
             if opening_rect.collidepoint(mouse_pos):
                 stock_order = self.shelf_view.stock_order
                 if stock_order[food_sprite].name is self.shelf_view.shelf_order_names[i]:
                     food_sprite_new_x = self.shelf_view.shelf_order_sprite_pos[i][0]
                     food_sprite_new_y = self.shelf_view.shelf_order_sprite_pos[i][1]
-                    print(food_sprite_new_x, food_sprite_new_y)
                     stock_order[food_sprite].update_pos(food_sprite_new_x, food_sprite_new_y)
                     return True
 

@@ -239,7 +239,6 @@ class Model:
         if self.should_prep_for_reset() and not self.prepped:
             self.player.store_curr_pos_as_old_pos()
             self.prepped = True
-        print(self.player.tiles_moved_since_reset)
 
         # 2d array of cells
         maze = self.maze.Maze
@@ -252,10 +251,6 @@ class Model:
             return maze[x_p1][y_p1].open_walls & direction.value
         else:
             dir_coord = self.maze.NEIGHBORS[direction]
-            # print(x_p1, y_p1)
-            # print(x_p2, y_p2)
-            # print(x_p1 + dir_coord[0], y_p1 + dir_coord[1])
-            # print(x_p1 + dir_coord[0] == x_p2, y_p1 + dir_coord[1] == y_p2)
             if direction is Direction.DOWN or direction is Direction.RIGHT:
                 return x_p1 + dir_coord[0] == x_p2 and y_p1 + dir_coord[1] == y_p2
             else:
