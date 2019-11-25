@@ -29,6 +29,7 @@ class Controller:
         self.finish_time = 0
         self.time_since_last_restock = 0
         self.job_app_finish_time = 0
+        self.time_since_reset = 0
 
         self.shelf_game_init = False
 
@@ -44,9 +45,7 @@ class Controller:
 
         self.current_screen = Screen.Title
 
-        self.old_pos_set = False
-        self.pos_reset = False
-        self.time_since_reset = time.time()
+        self.draw_insult = False
 
     def display_slot_machine_icons(self, results_to_display):
         """Displays previously rolled icons in slot machine"""
@@ -193,26 +192,30 @@ class Controller:
 
             # If in poverty
             if not results[2]:
-                if time.time() - self.time_since_last_restock > 7:
+                if time.time() - self.time_since_last_restock > 15:
                     self.current_screen = Screen.Restock
-            # If girl
-            if not results[0]:
-                if time.time() - self.time_since_last_restock > 3:
-                    if self.model.should_reset():
-                        self.model.reset_player()
-                # if not self.old_pos_set and self.model.should_prep_for_reset():
-                #     self.model.player.store_curr_pos_as_old_pos()
-                #     self.old_pos_set = True
+                # If girl
+                if not results[0]:
+                    if 1 < time.time() - self.time_since_last_restock < 12:
+                        if self.model.should_reset():
+                            self.model.reset_player()
+                            self.time_since_reset = time.time()
+                            self.draw_insult = True
             # If just girl
             elif not results[0]:
                 if self.model.should_reset():
                     self.model.reset_player()
+                    self.time_since_reset = time.time()
+                    self.draw_insult = True
+
+            if self.draw_insult and time.time() - self.time_since_reset > 3:
+                self.draw_insult = False
 
         offset_coord = self.model.player.get_offset_px()
         self.view.player_sprite.set_coord(offset_coord[0], offset_coord[1])
 
         maze_time = time.time() - self.start_time
-        self.view.draw_maze_screen(maze_time)
+        self.view.draw_maze_screen(maze_time, self.draw_insult)
 
         return True
 
@@ -259,7 +262,8 @@ class Controller:
 
     def play_application_game(self):
         maze_time = time.time() - self.start_time
-        self.view.draw_application_game(maze_time)
+        skippable = True if self.model.slot_machine.results[1] else False
+        self.view.draw_application_game(maze_time, skippable)
 
         if self.view.application_game.won:
             self.current_screen = Screen.Maze
@@ -322,7 +326,6 @@ class Controller:
                 if not self.slot_machine_init:
                     self.init_slot_machine()
                     self.slot_machine_init = True
-                    self.time_since_reset = time.time()
                 continue_playing = self.play_slot_machine()
             elif self.current_screen is Screen.Maze:
                 if not self.maze_init:

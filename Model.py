@@ -15,6 +15,7 @@ class SlotMachine:
         random.seed()
         # Chance to be woman, black, and in poverty, respectively.
         chance = [50, 25, 15]
+        # chance = [100, 0, 100]
 
         # For each reel, choose between two outcomes based on the chance.
         for reel in range(3):
@@ -197,8 +198,8 @@ class Player:
         self.tiles_moved_since_reset += 1
 
 class Model:
-    TILES_MOVED_TO_RESET = 80
-    TILES_TO_MOVE_BACK = 7
+    TILES_MOVED_TO_RESET = 65
+    TILES_TO_MOVE_BACK = 10
 
     def __init__(self):
         self.slot_machine = SlotMachine()

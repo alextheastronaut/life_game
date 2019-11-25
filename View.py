@@ -232,7 +232,7 @@ class ApplicationTypingGame:
 
         return InputBox(box_px, box_py, 300, 30, self.font)
 
-    def draw(self, screen):
+    def draw(self, screen, skippable):
         screen.blit(self.background.image, self.background.pos)
         for text in self.text_surface_list:
             screen.blit(text.text_surface, text.pos)
@@ -240,7 +240,9 @@ class ApplicationTypingGame:
         screen.blit(self.instructions_1.text_surface, self.instructions_1.pos)
         screen.blit(self.instructions_2.text_surface, self.instructions_2.pos)
         screen.blit(self.instructions_3.text_surface, self.instructions_3.pos)
-        self.skip_button.draw(screen)
+
+        if skippable:
+            self.skip_button.draw(screen)
 
     def set_name_texts(self, text_color):
         name_offset = 45
@@ -549,6 +551,8 @@ class View:
 
         self.win_screen = WinScreen(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
 
+        self.insults = []
+
     def spin_results_to_icon_images(self, spin_results):
         icon_images = [0] * 3
         for reel in range(3):
@@ -563,12 +567,16 @@ class View:
                 [Icon('black_hand.jpg'), Icon('white_hand.jpg')],
                 [Icon('food_stamp.jpg'), Icon('money.jpg')]]
 
-    def draw_maze_screen(self, time):
+    def draw_maze_screen(self, time, draw_insult):
         self.screen.blit(self.maze_image, (0, 0))
         self.player_sprite_image.draw(self.screen)
         self.win_sprite_image.draw(self.screen)
 
         self.draw_time_text(self.TOP_RIGHT_TIME_PX, self.TOP_RIGHT_TIME_PY, time)
+
+        if draw_insult:
+            insult = self.insults[0]
+            self.screen.blit(insult.text_surface, insult.pos)
 
     def draw_maze(self, maze):
         """ Draws a maze with a maze object"""
@@ -594,6 +602,12 @@ class View:
                                         y * (self.PATH_WIDTH + 1) + p)
 
         self.maze_image = self.screen.copy()
+
+        insult_x = self.SCREEN_WIDTH // 2
+        insult_y = self.SCREEN_HEIGHT // 2
+        font = pygame.font.SysFont('Comic Sans MS', 80)
+        self.insults.append(TextSprite(font, "A WOMAN SHOULDN'T BE DOING THIS", (255, 0, 0), (insult_x - 525, insult_y)))
+
         pygame.mixer.music.unload()
         pygame.mixer.music.load('sounds/maze_music.ogg')
         pygame.mixer.music.play(loops=-1, start=30)
@@ -631,9 +645,9 @@ class View:
 
     # def init_application_view(self):
     #     self.application_game = ApplicationTypingGame(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
-    def draw_application_game(self, time):
+    def draw_application_game(self, time, skippable):
         self.screen.fill((255, 255, 255))
-        self.application_game.draw(self.screen)
+        self.application_game.draw(self.screen, skippable)
         self.draw_time_text(self.TOP_RIGHT_TIME_PX, self.TOP_RIGHT_TIME_PY, time)
 
     def draw_shelf(self, time):
